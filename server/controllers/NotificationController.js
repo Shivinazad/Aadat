@@ -20,6 +20,22 @@ class NotificationController {
             res.status(500).json({ message: 'Server error' });
         }
     }
+
+    static async markSingleRead(req, res) {
+        try {
+            const notification = await NotificationMongo.findOneAndUpdate(
+                { _id: req.params.id, userId: req.user.id },
+                { read: true },
+                { new: true }
+            );
+            if (!notification) {
+                return res.status(404).json({ message: 'Notification not found' });
+            }
+            res.json({ message: 'Notification marked as read', notification });
+        } catch (error) {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 }
 
 module.exports = NotificationController;

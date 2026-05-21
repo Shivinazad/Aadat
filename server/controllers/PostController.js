@@ -7,7 +7,8 @@ class PostController {
     static async getRecent(req, res) {
         try {
             const limit = parseInt(req.query.limit) || 5;
-            const posts = await PostService.getRecentPosts(limit);
+            const currentUserId = req.user ? req.user.id : null;
+            const posts = await PostService.getRecentPosts(limit, currentUserId);
             res.status(200).json(posts);
         } catch (error) {
             console.error('Error in getRecent:', error);
@@ -27,7 +28,8 @@ class PostController {
 
     static async getFeed(req, res) {
         try {
-            const posts = await PostService.getFeedPosts();
+            const currentUserId = req.user.id;
+            const posts = await PostService.getFeedPosts(currentUserId);
             res.status(200).json(posts);
         } catch (error) {
             console.error('Error in getFeed:', error);
@@ -38,7 +40,8 @@ class PostController {
     static async getUserPosts(req, res) {
         try {
             const userId = req.params.userId;
-            const posts = await PostService.getUserPosts(userId);
+            const currentUserId = req.user.id;
+            const posts = await PostService.getUserPosts(userId, currentUserId);
             res.status(200).json(posts);
         } catch (error) {
             console.error('Error in getUserPosts:', error);

@@ -10,6 +10,8 @@ const { getClientUrl } = require('../utils/urls');
 // Auth routes
 router.post('/register/send-otp', AuthController.sendOTP);
 router.post('/register/verify-otp', AuthController.verifyOTP);
+router.post('/register/resend-otp', AuthController.sendOTP);
+router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
 
 const { upload } = require('../config/cloudinary');

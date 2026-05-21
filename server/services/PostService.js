@@ -1,26 +1,53 @@
-const { PostMongo, HabitMongo, UserMongo } = require('../models-mongo');
+const { PostMongo, HabitMongo, UserMongo, LikeMongo } = require('../models-mongo');
 
 class PostService {
-    static async getRecentPosts(limit) {
-        return await PostMongo.find()
+    static async getRecentPosts(limit, currentUserId) {
+        const posts = await PostMongo.find()
             .sort({ createdAt: -1 })
             .limit(limit)
             .populate('userId', 'id username')
             .populate('habitId', 'id habitTitle');
+
+        return await Promise.all(posts.map(async (post) => {
+            const postObj = post.toObject();
+            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
+            postObj.isLikedByCurrentUser = currentUserId 
+                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
+                : false;
+            return postObj;
+        }));
     }
 
-    static async getFeedPosts() {
-        return await PostMongo.find()
+    static async getFeedPosts(currentUserId) {
+        const posts = await PostMongo.find()
             .sort({ createdAt: -1 })
             .populate('userId', 'id username avatar')
             .populate('habitId', 'id habitTitle');
+
+        return await Promise.all(posts.map(async (post) => {
+            const postObj = post.toObject();
+            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
+            postObj.isLikedByCurrentUser = currentUserId 
+                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
+                : false;
+            return postObj;
+        }));
     }
 
-    static async getUserPosts(userId) {
-        return await PostMongo.find({ userId })
+    static async getUserPosts(userId, currentUserId) {
+        const posts = await PostMongo.find({ userId })
             .sort({ createdAt: -1 })
             .populate('userId', 'id username avatar')
             .populate('habitId', 'id habitTitle');
+
+        return await Promise.all(posts.map(async (post) => {
+            const postObj = post.toObject();
+            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
+            postObj.isLikedByCurrentUser = currentUserId 
+                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
+                : false;
+            return postObj;
+        }));
     }
 
     static async getCommunityStats() {

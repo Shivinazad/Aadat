@@ -96,6 +96,27 @@ class AuthController {
             res.status(500).json({ message: 'Server error' });
         }
     }
+
+    static async register(req, res) {
+        try {
+            const { username, email, password } = req.body;
+            if (!username || !email || !password) return res.status(400).json({ message: 'Missing fields' });
+            
+            const existingUser = await AuthService.getUserByEmail(email);
+            if (existingUser) return res.status(409).json({ message: 'Email in use' });
+            
+            const existingUsername = await AuthService.getUserByUsername(username);
+            if (existingUsername) return res.status(409).json({ message: 'Username taken' });
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = await AuthService.createUser({ username, email, password: hashedPassword });
+            const token = AuthService.generateToken(user);
+            res.status(201).json({ token, user: { id: user._id, username: user.username } });
+        } catch (error) {
+            console.error('Register error:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 }
 
 module.exports = AuthController;
