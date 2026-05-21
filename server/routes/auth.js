@@ -13,6 +13,7 @@ router.post('/register/verify-otp', AuthController.verifyOTP);
 router.post('/register/resend-otp', AuthController.sendOTP);
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
+router.post('/logout', AuthController.logout);
 
 const { upload } = require('../config/cloudinary');
 
@@ -37,6 +38,13 @@ router.get('/auth/google/callback', passport.authenticate('google', { session: f
             return res.redirect(`${getClientUrl()}/login?error=OAuthFailed`);
         }
         const token = AuthService.generateToken(req.user);
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        };
+        res.cookie('token', token, cookieOptions);
         res.redirect(`${getClientUrl()}/auth/callback?token=${token}`);
     } catch (error) {
         console.error('Google OAuth callback error:', error);
@@ -51,6 +59,13 @@ router.get('/auth/github/callback', passport.authenticate('github', { session: f
             return res.redirect(`${getClientUrl()}/login?error=OAuthFailed`);
         }
         const token = AuthService.generateToken(req.user);
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        };
+        res.cookie('token', token, cookieOptions);
         res.redirect(`${getClientUrl()}/auth/callback?token=${token}`);
     } catch (error) {
         console.error('GitHub OAuth callback error:', error);

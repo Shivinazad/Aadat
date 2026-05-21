@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true
 });
 
 api.interceptors.request.use(
@@ -40,6 +41,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post('/users/register', userData),
   login: (credentials) => api.post('/users/login', credentials),
+  logout: () => api.post('/users/logout'),
   getProfile: () => api.get('/users/me'),
   updateProfile: (data) => api.put('/users/profile', data, {
     headers: {

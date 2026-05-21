@@ -7,11 +7,24 @@ const fs = require('fs');
 const http = require('http');
 const jwt = require('jsonwebtoken');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
 const passport = require('./config/passport');
 const connectMongo = require('./mongo/connectMongo');
 const defaultAchievements = require('./constants/defaultAchievements');
 const { setIo } = require('./realtime/socketEvents');
+
+// Helper to parse cookies from Socket.io handshake headers
+const parseCookies = (cookieString) => {
+    if (!cookieString) return {};
+    return cookieString.split(';').reduce((acc, curr) => {
+        const [key, val] = curr.split('=').map(c => c.trim());
+        if (key && val) {
+            acc[key] = decodeURIComponent(val);
+        }
+        return acc;
+    }, {});
+};
 
 const authRoutes = require('./routes/auth');
 const habitRoutes = require('./routes/habits');
@@ -35,6 +48,7 @@ const isServerless = !!process.env.VERCEL;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Request logging (stdout only — compatible with all hosts)
 app.use((req, res, next) => {
@@ -97,11 +111,22 @@ if (!isServerless) {
         });
 
         io.use((socket, next) => {
-            const authHeader = socket.handshake.headers?.authorization;
-            const bearerToken = authHeader && authHeader.startsWith('Bearer ')
-                ? authHeader.slice(7)
-                : null;
-            const token = socket.handshake.auth?.token || bearerToken;
+            // 1. Try to read token from cookies
+            let token = null;
+            const cookieHeader = socket.handshake.headers?.cookie;
+            if (cookieHeader) {
+                const parsedCookies = parseCookies(cookieHeader);
+                token = parsedCookies.token;
+            }
+
+            // 2. Fallback to handshake auth or Authorization header
+            if (!token) {
+                const authHeader = socket.handshake.headers?.authorization;
+                const bearerToken = authHeader && authHeader.startsWith('Bearer ')
+                    ? authHeader.slice(7)
+                    : null;
+                token = socket.handshake.auth?.token || bearerToken;
+            }
 
             if (!token) {
                 return next();

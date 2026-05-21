@@ -4,6 +4,13 @@ const UserService = require('../services/UserService');
 const { sendOTPEmail } = require('../emailService');
 const { UserMongo, HabitMongo, CompletionMongo } = require('../models-mongo');
 
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
+
 class AuthController {
     static async sendOTP(req, res) {
         try {
@@ -32,6 +39,7 @@ class AuthController {
             otpRecord.verified = true;
             await otpRecord.save();
             const token = AuthService.generateToken(user);
+            res.cookie('token', token, cookieOptions);
             res.status(201).json({ token, user: { id: user._id, username: user.username } });
         } catch (error) {
             res.status(500).json({ message: 'Server error' });
@@ -44,6 +52,7 @@ class AuthController {
             const user = await AuthService.getUserByEmail(email);
             if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ message: 'Invalid credentials' });
             const token = AuthService.generateToken(user);
+            res.cookie('token', token, cookieOptions);
             res.status(200).json({ token, user: { id: user._id, username: user.username } });
         } catch (error) {
             res.status(500).json({ message: 'Server error' });
@@ -111,9 +120,24 @@ class AuthController {
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = await AuthService.createUser({ username, email, password: hashedPassword });
             const token = AuthService.generateToken(user);
+            res.cookie('token', token, cookieOptions);
             res.status(201).json({ token, user: { id: user._id, username: user.username } });
         } catch (error) {
             console.error('Register error:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    static async logout(req, res) {
+        try {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+            });
+            res.status(200).json({ message: 'Logged out successfully' });
+        } catch (error) {
+            console.error('Logout error:', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

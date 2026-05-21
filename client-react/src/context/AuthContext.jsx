@@ -63,11 +63,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem('token');
     disconnectSocket();
     setToken(null);
     setUser(null);
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const updateUser = (userData) => {
