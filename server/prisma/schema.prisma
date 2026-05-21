@@ -1,0 +1,149 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String            @id @default(uuid())
+  username     String            @unique
+  email        String            @unique
+  password     String
+  user_level   Int               @default(1)
+  user_xp      Int               @default(0)
+  communities  String?           // Storing mixed as String (JSON)
+  avatar       String            @default("👤")
+  bio          String            @default("Building habits in public.")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  habits       Habit[]
+  posts        Post[]
+  likes        Like[]
+  sentNotifications Notification[] @relation("SentNotifications")
+  notifications     Notification[] @relation("UserNotifications")
+  achievements UserAchievement[]
+
+  @@map("users")
+}
+
+model Habit {
+  id                 String       @id @default(uuid())
+  habitTitle         String
+  habitCategory      String?
+  startDate          DateTime     @default(now())
+  currentStreak      Int          @default(0)
+  longestStreak      Int          @default(0)
+  lastCheckinDate    DateTime?
+  description        String?
+  aiDescription      String?
+  roadmap            String?      // Mixed roadmap stored as JSON string
+  targetPercentage   Int          @default(70)
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  completions        Completion[]
+  posts              Post[]
+
+  @@map("habits")
+}
+
+model Post {
+  id           String        @id @default(uuid())
+  content      String
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habitId      String?
+  habit        Habit?        @relation(fields: [habitId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  likes        Like[]
+  notifications Notification[]
+
+  @@map("posts")
+}
+
+model Completion {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  notes     String?
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("completions")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId  String?
+  sender    User?    @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  type      String
+  message   String
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String
+  description String
+  icon        String   @default("🏆")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  email     String
+  otp       String
+  username  String
+  password  String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("otps")
+}
