@@ -140,6 +140,59 @@ const EditProfile = () => {
     navigate('/profile', { replace: true });
   };
 
+  const handleDone = async () => {
+    setSavingAvatar(true);
+    setSavingUsername(true);
+    setSavingBio(true);
+    try {
+      // 1. Save Avatar if changed
+      const isAvatarChanged = selectedFile || (selectedAvatar !== (user?.avatar || '👤') && !selectedFile);
+      if (isAvatarChanged) {
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('avatar', selectedFile);
+          await authAPI.updateProfile(formData);
+        } else {
+          await authAPI.updateProfile({
+            avatar: selectedAvatar
+          });
+        }
+      }
+
+      // 2. Save Username if changed
+      const isUsernameChanged = username.trim() && username.trim() !== user?.username;
+      if (isUsernameChanged) {
+        const response = await authAPI.updateProfile({
+          username: username.trim()
+        });
+        if (response.data) {
+          updateUser(response.data);
+        }
+      }
+
+      // 3. Save Bio if changed
+      const isBioChanged = bio !== user?.bio;
+      if (isBioChanged) {
+        await authAPI.updateProfile({
+          bio: bio
+        });
+      }
+
+      // Refetch user data to ensure UI is perfectly in sync
+      await fetchUser();
+      
+      // Navigate back to profile
+      navigate('/profile', { replace: true });
+    } catch (error) {
+      console.error('Error saving profile changes on done:', error);
+      alert('Failed to save some profile changes. Please check and try again.');
+    } finally {
+      setSavingAvatar(false);
+      setSavingUsername(false);
+      setSavingBio(false);
+    }
+  };
+
   return (
     <div className="page">
       <Navbar />
@@ -214,7 +267,7 @@ const EditProfile = () => {
               <button 
                 className="btn-primary" 
                 onClick={handleSaveAvatar} 
-                disabled={savingAvatar || selectedAvatar === user?.avatar}
+                disabled={savingAvatar || (selectedAvatar === user?.avatar && !selectedFile)}
               >
                 {savingAvatar ? '💾 Saving...' : avatarSaved ? '✓ Saved!' : '💾 Save Avatar'}
               </button>
@@ -277,7 +330,7 @@ const EditProfile = () => {
           </section>
 
           <div className="edit-actions-footer">
-            <button className="btn-done" onClick={handleCancel}>
+            <button className="btn-done" onClick={handleDone}>
               ✓ Done
             </button>
           </div>
