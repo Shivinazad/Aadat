@@ -16,6 +16,13 @@ class PostService {
             .populate('habitId', 'id habitTitle');
     }
 
+    static async getUserPosts(userId) {
+        return await PostMongo.find({ userId })
+            .sort({ createdAt: -1 })
+            .populate('userId', 'id username avatar')
+            .populate('habitId', 'id habitTitle');
+    }
+
     static async getCommunityStats() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);

@@ -35,6 +35,17 @@ class PostController {
         }
     }
 
+    static async getUserPosts(req, res) {
+        try {
+            const userId = req.params.userId;
+            const posts = await PostService.getUserPosts(userId);
+            res.status(200).json(posts);
+        } catch (error) {
+            console.error('Error in getUserPosts:', error);
+            res.status(500).json({ msg: 'Server error fetching user posts.' });
+        }
+    }
+
     static async create(req, res) {
         try {
             const { habitId, caption, mediaUrl } = req.body;
