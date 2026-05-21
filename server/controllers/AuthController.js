@@ -52,7 +52,8 @@ class AuthController {
 
     static async getProfile(req, res) {
         try {
-            const user = await UserService.getProfile(req.user.id);
+            const userId = (req.params.id && req.params.id !== 'me') ? req.params.id : req.user.id;
+            const user = await UserService.getProfile(userId);
             if (!user) return res.status(404).json({ message: 'User not found' });
             res.json(user);
         } catch (error) {
@@ -62,18 +63,36 @@ class AuthController {
 
     static async updateProfile(req, res) {
         try {
-            const { username, avatar, bio } = req.body;
+            const { username, bio } = req.body;
+            let avatarUrl = req.body.avatar;
+            if (req.file && req.file.path) {
+                avatarUrl = req.file.path;
+            }
+
             const user = await UserMongo.findById(req.user.id);
             if (!user) return res.status(404).json({ message: 'User not found' });
             if (username && username !== user.username) {
                 if (await AuthService.getUserByUsername(username)) return res.status(409).json({ message: 'Username taken' });
                 user.username = username;
             }
-            if (avatar) user.avatar = avatar;
+            if (avatarUrl) user.avatar = avatarUrl;
             if (bio !== undefined) user.bio = bio;
             await user.save();
             res.json({ message: 'Profile updated', user });
         } catch (error) {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+    static async getStats(req, res) {
+        try {
+            const userId = req.params.id || req.user.id;
+            const habits = await HabitMongo.find({ userId });
+            const completions = await CompletionMongo.find({ userId });
+            
+            const totalCheckins = completions.length;
+            res.json({ totalHabits: habits.length, totalCheckins });
+        } catch (error) {
+            console.error('getStats error:', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

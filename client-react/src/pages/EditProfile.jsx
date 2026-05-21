@@ -9,6 +9,8 @@ const EditProfile = () => {
   const { user, updateUser, fetchUser } = useAuth();
   const navigate = useNavigate();
   const [selectedAvatar, setSelectedAvatar] = useState('👤');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [savingAvatar, setSavingAvatar] = useState(false);
@@ -32,19 +34,35 @@ const EditProfile = () => {
   useEffect(() => {
     if (user && !isInitialized) {
       setSelectedAvatar(user.avatar || '👤');
+      setPreviewUrl(user.avatar && user.avatar.startsWith('http') ? user.avatar : null);
       setUsername(user.username || '');
       setBio(user.bio || '');
       setIsInitialized(true);
     }
   }, [user, isInitialized]);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setAvatarSaved(false);
+    }
+  };
+
   const handleSaveAvatar = async () => {
     setSavingAvatar(true);
     setAvatarSaved(false);
     try {
-      await authAPI.updateProfile({
-        avatar: selectedAvatar
-      });
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('avatar', selectedFile);
+        await authAPI.updateProfile(formData);
+      } else {
+        await authAPI.updateProfile({
+          avatar: selectedAvatar
+        });
+      }
 
       // Refetch user data to update UI everywhere
       await fetchUser();
@@ -141,14 +159,49 @@ const EditProfile = () => {
             </div>
             <div className="current-selection">
               <span className="current-label">Current Avatar:</span>
-              <span className="current-avatar">{selectedAvatar}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Avatar Preview" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <span className="current-avatar">{selectedAvatar}</span>
+                )}
+                <div>
+                  <label htmlFor="avatar-upload" className="btn-primary" style={{ cursor: 'pointer', padding: '0.5rem 1rem', display: 'inline-block' }}>
+                    Upload Photo
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                  {previewUrl && (
+                    <button 
+                      className="back-button" 
+                      style={{ marginLeft: '1rem', fontSize: '0.9rem' }}
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setPreviewUrl(null);
+                        setSelectedAvatar('👤');
+                        setAvatarSaved(false);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
+            <div style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>Or choose an emoji:</div>
             <div className="avatar-grid">
               {avatarOptions.map((avatar) => (
                 <button
                   key={avatar}
                   className={`avatar-option ${selectedAvatar === avatar ? 'selected' : ''}`}
                   onClick={() => {
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
                     setSelectedAvatar(avatar);
                     setAvatarSaved(false);
                   }}

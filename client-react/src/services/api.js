@@ -38,7 +38,11 @@ export const authAPI = {
   register: (userData) => api.post('/users/register', userData),
   login: (credentials) => api.post('/users/login', credentials),
   getProfile: () => api.get('/users/me'),
-  updateProfile: (data) => api.put('/users/profile', data),
+  updateProfile: (data) => api.put('/users/profile', data, {
+    headers: {
+      'Content-Type': data instanceof FormData ? 'multipart/form-data' : 'application/json'
+    }
+  }),
   getAchievements: () => api.get('/users/me/achievements'),
   getStats: () => api.get('/stats/landing'),
   getUserStats: (id) => id ? api.get(`/users/${id}/stats`) : api.get('/users/stats'),
