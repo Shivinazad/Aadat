@@ -17,6 +17,7 @@ router.post('/login', AuthController.login);
 const { upload } = require('../config/cloudinary');
 
 // Profile routes
+router.get('/random', AuthController.getRandomUsers);
 router.get('/stats', auth, AuthController.getStats);
 router.get('/me', auth, AuthController.getProfile);
 router.get('/me/achievements', auth, AchievementController.getAll);

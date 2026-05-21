@@ -117,6 +117,20 @@ class AuthController {
             res.status(500).json({ message: 'Server error' });
         }
     }
+
+    static async getRandomUsers(req, res) {
+        try {
+            const limit = parseInt(req.query.limit) || 5;
+            const users = await UserMongo.aggregate([
+                { $sample: { size: limit } },
+                { $project: { username: 1, avatar: 1, user_level: 1, bio: 1 } }
+            ]);
+            res.json(users);
+        } catch (error) {
+            console.error('getRandomUsers error:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
 }
 
 module.exports = AuthController;
