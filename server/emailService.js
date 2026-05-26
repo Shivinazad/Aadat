@@ -1,14 +1,8 @@
-const { Resend } = require('resend');
 const sgMail = require('@sendgrid/mail');
 const nodemailer = require('nodemailer');
 const { getClientUrl } = require('./utils/urls');
 
 // ---- Provider setup ----
-let resend;
-if (process.env.RESEND_API_KEY) {
-    resend = new Resend(process.env.RESEND_API_KEY);
-}
-
 if (process.env.SENDGRID_API_KEY) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
@@ -21,24 +15,9 @@ const createGmailTransport = () => nodemailer.createTransport({
     }
 });
 
-// ---- Generic send function (tries Resend → SendGrid → Gmail) ----
+// ---- Generic send function (tries SendGrid → Gmail) ----
 const sendEmail = async ({ to, subject, text, html }) => {
-    // 1. Resend (HTTP API — works on all cloud hosts including Render)
-    if (resend) {
-        const fromEmail = process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev';
-        const { data, error } = await resend.emails.send({
-            from: `Aadat <${fromEmail}>`,
-            to: [to],
-            subject,
-            text,
-            html
-        });
-        if (error) throw new Error(`Resend error: ${error.message}`);
-        console.log(`✅ Email sent to ${to} via Resend`);
-        return { success: true, messageId: data?.id };
-    }
-
-    // 2. SendGrid (HTTP API — works on cloud hosts)
+    // 1. SendGrid (HTTP API — works on cloud hosts like Render)
     if (process.env.SENDGRID_API_KEY) {
         const senderEmail = process.env.SENDGRID_SENDER_EMAIL || 'noreply@yourdomain.com';
         const result = await sgMail.send({
@@ -53,7 +32,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
         return { success: true, messageId: result[0].headers['x-message-id'] };
     }
 
-    // 3. Gmail/Nodemailer (SMTP — only works locally, blocked on Render)
+    // 2. Gmail/Nodemailer (SMTP — only works locally, blocked on Render)
     if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
         const transporter = createGmailTransport();
         const info = await transporter.sendMail({
@@ -67,7 +46,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
         return { success: true, messageId: info.messageId };
     }
 
-    throw new Error('No email service configured (set RESEND_API_KEY, SENDGRID_API_KEY, or EMAIL_USER/EMAIL_PASSWORD)');
+    throw new Error('No email service configured (set SENDGRID_API_KEY or EMAIL_USER/EMAIL_PASSWORD)');
 };
 
 // ---- Invitation Email ----

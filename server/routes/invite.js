@@ -33,7 +33,7 @@ router.post('/', auth, async (req, res) => {
             return res.status(409).json({ msg: 'This user is already on Aadat!' });
         }
 
-        const emailConfigured = process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY || (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
+        const emailConfigured = process.env.SENDGRID_API_KEY || (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD);
 
         if (emailConfigured) {
             try {

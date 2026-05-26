@@ -33,7 +33,6 @@
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
-    "resend": "^6.12.4",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
