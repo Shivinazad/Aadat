@@ -305,10 +305,6 @@ CLOUDINARY_API_SECRET=<your-api-secret>
 
 ---
 
-## 📧 Support
 
-For support, email shivinazad3@gmail.com or create an issue in the repository.
 
----
-
-**Built with ❤️ by Shivin Azad — for people who want to build better habits together**
+**Built with ❤️ by Sambhav Sehgal Shivin Azad Samarth Sharma Shivansh Chandel — for people who want to build better habits together**
