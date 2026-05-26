@@ -58,6 +58,51 @@ Ensure the output is valid JSON and nothing else.
         
         return JSON.parse(responseText);
     }
+
+    static async moderateContent(text) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.warn('GEMINI_API_KEY is not configured for moderation.');
+            return { isAbusive: false, reason: null };
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: 'gemini-2.5-flash',
+            generationConfig: { responseMimeType: 'application/json' }
+        });
+
+        const prompt = `
+You are an AI content moderator for "Aadat", a social space for habit tracking.
+Analyze the following text content for policy violations, specifically abusive behavior, harassment, extreme profanity, hate speech, threats, or inappropriate content.
+
+Content to moderate:
+"${text}"
+
+Respond with a JSON object matching this exact schema:
+{
+  "isAbusive": true or false,
+  "reason": "Brief explanation of why it was flagged (e.g., hate speech, offensive language, abuse) or null if not abusive"
+}
+
+Ensure the output is valid JSON and nothing else.
+`;
+
+        try {
+            const result = await model.generateContent(prompt);
+            let responseText = result.response.text().trim();
+            
+            // Remove markdown formatting if present
+            if (responseText.startsWith('```')) {
+                responseText = responseText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+            }
+            
+            return JSON.parse(responseText);
+        } catch (error) {
+            console.error('Content moderation failed:', error);
+            return { isAbusive: false, reason: null };
+        }
+    }
 }
 
 module.exports = GeminiService;

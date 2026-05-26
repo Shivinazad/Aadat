@@ -1,6 +1,22 @@
-const { PostMongo, HabitMongo, UserMongo, LikeMongo } = require('../models-mongo');
+const { PostMongo, HabitMongo, UserMongo, LikeMongo, CommentMongo } = require('../models-mongo');
 
 class PostService {
+    static async enrichPostDetails(post, currentUserId) {
+        const postObj = post.toObject();
+        postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
+        postObj.isLikedByCurrentUser = currentUserId 
+            ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
+            : false;
+
+        // Fetch comments and populate author avatar/username
+        postObj.comments = await CommentMongo.find({ postId: post._id })
+            .sort({ createdAt: 1 })
+            .populate('userId', 'id username avatar');
+        postObj.commentCount = postObj.comments.length;
+
+        return postObj;
+    }
+
     static async getRecentPosts(limit, currentUserId) {
         const posts = await PostMongo.find()
             .sort({ createdAt: -1 })
@@ -8,14 +24,7 @@ class PostService {
             .populate('userId', 'id username')
             .populate('habitId', 'id habitTitle');
 
-        return await Promise.all(posts.map(async (post) => {
-            const postObj = post.toObject();
-            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
-            postObj.isLikedByCurrentUser = currentUserId 
-                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
-                : false;
-            return postObj;
-        }));
+        return await Promise.all(posts.map(post => this.enrichPostDetails(post, currentUserId)));
     }
 
     static async getFeedPosts(currentUserId) {
@@ -24,14 +33,7 @@ class PostService {
             .populate('userId', 'id username avatar')
             .populate('habitId', 'id habitTitle');
 
-        return await Promise.all(posts.map(async (post) => {
-            const postObj = post.toObject();
-            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
-            postObj.isLikedByCurrentUser = currentUserId 
-                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
-                : false;
-            return postObj;
-        }));
+        return await Promise.all(posts.map(post => this.enrichPostDetails(post, currentUserId)));
     }
 
     static async getUserPosts(userId, currentUserId) {
@@ -40,14 +42,7 @@ class PostService {
             .populate('userId', 'id username avatar')
             .populate('habitId', 'id habitTitle');
 
-        return await Promise.all(posts.map(async (post) => {
-            const postObj = post.toObject();
-            postObj.likeCount = await LikeMongo.countDocuments({ postId: post._id });
-            postObj.isLikedByCurrentUser = currentUserId 
-                ? await LikeMongo.exists({ postId: post._id, userId: currentUserId }).then(exists => !!exists)
-                : false;
-            return postObj;
-        }));
+        return await Promise.all(posts.map(post => this.enrichPostDetails(post, currentUserId)));
     }
 
     static async getCommunityStats() {
@@ -64,12 +59,13 @@ class PostService {
         return { activeMembers, postsToday, completionRate };
     }
 
-    static async createPost(userId, habitId, caption, mediaUrl) {
+    static async createPost(userId, habitId, content, mediaUrl, mediaType) {
         return await PostMongo.create({
             userId,
             habitId,
-            caption,
-            mediaUrl
+            content,
+            mediaUrl,
+            mediaType
         });
     }
 

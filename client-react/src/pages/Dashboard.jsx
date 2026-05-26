@@ -27,6 +27,9 @@ const Dashboard = () => {
   const [currentHabit, setCurrentHabit] = useState(null);
   const [checkinContent, setCheckinContent] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(null);
   const [showEditHabitModal, setShowEditHabitModal] = useState(false);
@@ -54,7 +57,9 @@ const Dashboard = () => {
     const unsubscribe = subscribeToDataChanges((event) => {
       if (!event?.scope) return;
 
-      const isCurrentUserEvent = !event.userId || String(event.userId) === String(currentUserId);
+      const isCurrentUserEvent = !event.userId || 
+                                 String(event.userId) === String(currentUserId) || 
+                                 (event.targetUserId && String(event.targetUserId) === String(currentUserId));
       if (!isCurrentUserEvent) return;
 
       if (['posts', 'likes', 'habits', 'dashboard', 'notifications'].includes(event.scope)) {
@@ -132,6 +137,8 @@ const Dashboard = () => {
     setCurrentHabit(habit);
     setShowCheckinModal(true);
     setCheckinContent('');
+    setSelectedFile(null);
+    setFilePreview(null);
   };
 
   const handleCheckin = async () => {
@@ -140,20 +147,29 @@ const Dashboard = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
-      await postsAPI.create({
-        content: checkinContent,
-        habitId: getHabitId(currentHabit),
-      });
+      const formData = new FormData();
+      formData.append('content', checkinContent);
+      formData.append('habitId', getHabitId(currentHabit));
+      if (selectedFile) {
+        formData.append('media', selectedFile);
+      }
+
+      await postsAPI.create(formData);
       setShowCheckinModal(false);
+      setSelectedFile(null);
+      setFilePreview(null);
       celebrateCheckIn(); // Trigger celebration animation
       showToast('Check-in successful! 🎉');
       fetchHabits();
-      fetchUser();
+      await fetchUser();
       fetchWeeklyStats();
     } catch (error) {
       const errorMsg = error.response?.data?.msg || 'Failed to post check-in';
       showToast(errorMsg, 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -284,23 +300,26 @@ const Dashboard = () => {
 
   const maxStreak = habits.length > 0 ? Math.max(...habits.map(h => h.currentStreak || 0)) : 0;
 
-  // Calculate XP for next level dynamically
-  const getXpForNextLevel = (level) => {
-    if (level === 1) return 80;
-    if (level === 2) return 200;
-    if (level === 3) return 400;
-    if (level === 4) return 800;
-    if (level === 5) return 1600;
-    if (level === 6) return 3200;
-    if (level === 7) return 6400;
-    if (level === 8) return 12800;
-    if (level === 9) return 25600;
-    return 51200 * (level - 9);
+  const getXpThresholds = (level) => {
+    const thresholds = [0, 80, 200, 400, 800, 1600, 3200, 6400, 12800, 25600];
+    if (level <= 9) {
+      return {
+        baseXp: thresholds[level - 1],
+        nextXp: thresholds[level]
+      };
+    }
+    const extraLevels = level - 9;
+    return {
+      baseXp: 25600 + (extraLevels - 1) * 51200,
+      nextXp: 25600 + extraLevels * 51200
+    };
   };
 
   const currentLevel = user?.user_level || 1;
-  const xpForNextLevel = getXpForNextLevel(currentLevel);
-  const xpPercentage = user ? ((user.user_xp % xpForNextLevel) / xpForNextLevel) * 100 : 0;
+  const { baseXp, nextXp } = getXpThresholds(currentLevel);
+  const xpInCurrentLevel = user ? (user.user_xp - baseXp) : 0;
+  const xpNeededForNextLevel = nextXp - baseXp;
+  const xpPercentage = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100));
   // Avatar rendering: show image if URL, emoji/text otherwise
   const getAvatarElement = () => {
     if (!user?.avatar) return '👤';
@@ -675,7 +694,7 @@ const Dashboard = () => {
               <div className="level-section">
                 <div className="level-header">
                   <span className="level-text">Level {user?.user_level}</span>
-                  <span className="xp-count">{user?.user_xp} / {xpForNextLevel} XP</span>
+                  <span className="xp-count">{user?.user_xp} / {nextXp} XP</span>
                 </div>
                 <div className="progress-bar-container">
                   <div className="progress-bar" style={{ width: `${xpPercentage}%` }}></div>
@@ -756,13 +775,106 @@ const Dashboard = () => {
                   onChange={(e) => setCheckinContent(e.target.value)}
                   maxLength={280}
                 />
-                <div className="char-counter-wrapper">
+                <div className="char-counter-wrapper" style={{ marginBottom: '16px' }}>
                   <span className="char-counter">{280 - checkinContent.length}</span>
+                </div>
+
+                {/* Media upload input and preview */}
+                <div className="media-upload-container" style={{
+                  border: '1px dashed var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  background: 'var(--bg-secondary)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {filePreview ? (
+                    <div style={{ position: 'relative' }}>
+                      {selectedFile?.type?.startsWith('video') ? (
+                        <video src={filePreview} controls style={{ width: '100%', maxHeight: '180px', borderRadius: '6px' }} />
+                      ) : (
+                        <img src={filePreview} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '6px' }} />
+                      )}
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFile(null);
+                          setFilePreview(null);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: 'rgba(0,0,0,0.7)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          zIndex: 10
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <label style={{ cursor: 'pointer', display: 'block', margin: 0 }}>
+                      <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>📷</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Upload Photo or Video (Optional)</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*" 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setSelectedFile(file);
+                            setFilePreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
                 <button onClick={() => setShowCheckinModal(false)} className="btn-secondary">Cancel</button>
-                <button onClick={handleCheckin} className="btn-primary">Post Check-in</button>
+                <button 
+                  onClick={handleCheckin} 
+                  className="btn-primary" 
+                  disabled={submitting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    opacity: submitting ? 0.7 : 1,
+                    cursor: submitting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {submitting ? (
+                    <>
+                      <div className="loading-spinner-btn" style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.6s linear infinite'
+                      }}></div>
+                      <span>Posting...</span>
+                    </>
+                  ) : (
+                    'Post Check-in'
+                  )}
+                </button>
               </div>
             </div>
           </div>

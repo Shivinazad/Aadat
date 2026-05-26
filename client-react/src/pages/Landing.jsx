@@ -23,37 +23,17 @@ const Landing = () => {
     { username: 'Loading...' },
     { username: 'Loading...' }
   ]);
-  const [isDark, setIsDark] = useState(false);
+  const isDark = true;
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDark(true);
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.add('light-mode');
-    }
+    localStorage.setItem('theme', 'dark');
+    document.body.classList.add('dark-mode');
+    document.body.classList.remove('light-mode');
     document.body.classList.add('landing-page');
     return () => {
-      document.body.classList.remove('landing-page', 'dark-mode', 'light-mode');
+      document.body.classList.remove('landing-page', 'light-mode');
     };
   }, []);
-
-  useEffect(() => {
-    if (isDark) {
-      document.body.classList.add('dark-mode');
-      document.body.classList.remove('light-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.add('light-mode');
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-  };
 
   useEffect(() => {
     // Fetch real statistics
@@ -167,24 +147,7 @@ const Landing = () => {
             Aadat<span className="neon-dot"></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <motion.button
-              onClick={toggleTheme}
-              className="theme-toggle"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                color: isDark ? 'var(--white)' : 'var(--black)',
-                fontSize: '1.25rem'
-              }}
-            >
-              {isDark ? <FiSun /> : <FiMoon />}
-            </motion.button>
+
             <Link to="/login" className="btn-primary-new">
               Sign up
               <FiArrowRight />

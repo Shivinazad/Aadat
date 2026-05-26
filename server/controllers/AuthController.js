@@ -51,6 +51,9 @@ class AuthController {
             const { email, password } = req.body;
             const user = await AuthService.getUserByEmail(email);
             if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ message: 'Invalid credentials' });
+            if (user.isSuspended) {
+                return res.status(403).json({ message: 'Your account has been suspended due to multiple policy violations.' });
+            }
             const token = AuthService.generateToken(user);
             res.cookie('token', token, cookieOptions);
             res.status(200).json({ token, user: { id: user._id, username: user.username } });

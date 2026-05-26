@@ -27,6 +27,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 403 && (error.response.data?.msg?.includes('suspended') || error.response.data?.message?.includes('suspended'))) {
+      alert(error.response.data.msg || error.response.data.message);
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       const publicPaths = ['/', '/login', '/register', '/auth/callback'];
@@ -71,9 +76,15 @@ export const habitsAPI = {
 export const postsAPI = {
   getAll: () => api.get('/posts'),
   getUserPosts: (userId) => api.get(`/posts/user/${userId}`),
-  create: (postData) => api.post('/posts', postData),
+  create: (postData) => api.post('/posts', postData, {
+    headers: {
+      'Content-Type': postData instanceof FormData ? 'multipart/form-data' : 'application/json'
+    }
+  }),
   like: (postId) => api.post(`/posts/${postId}/like`),
   getCommunityStats: () => api.get('/posts/stats/community'),
+  comment: (postId, content) => api.post(`/posts/${postId}/comments`, { content }),
+  getComments: (postId) => api.get(`/posts/${postId}/comments`),
 };
 
 export const leaderboardAPI = {

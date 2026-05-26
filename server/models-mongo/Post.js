@@ -14,6 +14,15 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'HabitMongo',
     default: null
+  },
+  mediaUrl: {
+    type: String,
+    default: null
+  },
+  mediaType: {
+    type: String,
+    enum: ['image', 'video', null],
+    default: null
   }
 }, {
   timestamps: true

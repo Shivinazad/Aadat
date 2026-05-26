@@ -535,11 +535,11 @@ body.dark-mode .nav-link.active {
   top: 60px;
   left: 0;
   width: 100%;
-  background: var(--white);
+  background: var(--gray-900);
+  border-bottom: 1px solid var(--gray-800);
   padding: 1rem;
   flex-direction: column;
   transform: scale(1.2);
-}
 }
 
 .sign-in {

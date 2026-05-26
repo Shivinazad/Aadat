@@ -16,9 +16,9 @@ import './style.css';
 
 function App() {
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.body.classList.toggle('light-mode', savedTheme === 'light');
-    document.body.classList.toggle('dark-mode', savedTheme === 'dark');
+    localStorage.setItem('theme', 'dark');
+    document.body.classList.remove('light-mode');
+    document.body.classList.add('dark-mode');
   }, []);
 
   return (

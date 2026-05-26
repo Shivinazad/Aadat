@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 import CountUp from 'react-countup';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import { subscribeToDataChanges } from '../services/socket';
+import { useAuth } from '../context/AuthContext';
 import '../home.css';
 
 const Community = () => {
+  const { user, fetchUser } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -16,8 +18,30 @@ const Community = () => {
     postsToday: 0,
     completionRate: 0
   });
+  const [expandedPostId, setExpandedPostId] = useState(null);
+  const [commentText, setCommentText] = useState({});
+  const [submittingComments, setSubmittingComments] = useState({});
 
   const getPostId = (post) => post?.id || post?._id;
+
+  const handleCommentSubmit = async (postId) => {
+    const text = commentText[postId] || '';
+    if (!text.trim()) return;
+    setSubmittingComments(prev => ({ ...prev, [postId]: true }));
+    try {
+      await postsAPI.comment(postId, text);
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
+      fetchPosts();
+      if (fetchUser) {
+        await fetchUser();
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.msg || 'Failed to post comment';
+      alert(errorMsg);
+    } finally {
+      setSubmittingComments(prev => ({ ...prev, [postId]: false }));
+    }
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -25,16 +49,25 @@ const Community = () => {
   }, []);
 
   useEffect(() => {
+    const currentUserId = user?.id || user?._id;
     const unsubscribe = subscribeToDataChanges((event) => {
       if (!event?.scope) return;
+      
+      const isCurrentUserEvent = !event.userId || 
+                                 String(event.userId) === String(currentUserId) || 
+                                 (event.targetUserId && String(event.targetUserId) === String(currentUserId));
+
       if (['posts', 'likes', 'habits'].includes(event.scope)) {
         fetchPosts();
         fetchStats();
+        if (isCurrentUserEvent && fetchUser) {
+          fetchUser();
+        }
       }
     });
 
     return unsubscribe;
-  }, []);
+  }, [user, fetchUser]);
 
   const fetchPosts = async () => {
     try {
@@ -211,8 +244,17 @@ const Community = () => {
                       </div>
                       <div className="post-content">
                         <p>{post.content}</p>
+                        {post.mediaUrl && (
+                          <div className="post-media-wrapper" style={{ marginTop: '14px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', background: '#0a0a0a' }}>
+                            {post.mediaType === 'video' ? (
+                              <video src={post.mediaUrl} controls style={{ width: '100%', maxHeight: '450px', display: 'block' }} />
+                            ) : (
+                              <img src={post.mediaUrl} alt="Check-in media" style={{ width: '100%', maxHeight: '450px', objectFit: 'contain', display: 'block' }} />
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="post-actions">
+                      <div className="post-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                         <motion.button 
                           className={`btn-like ${isLiked ? 'liked' : ''}`}
                           onClick={() => !isLiked && handleLike(getPostId(post))}
@@ -223,10 +265,152 @@ const Community = () => {
                           <FiHeart fill={isLiked ? 'currentColor' : 'none'} />
                           {isLiked ? 'Liked' : 'Like'}
                         </motion.button>
+                        
+                        <motion.button 
+                          className="btn-comment"
+                          onClick={() => setExpandedPostId(expandedPostId === getPostId(post) ? null : getPostId(post))}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-secondary)',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'var(--transition)'
+                          }}
+                        >
+                          <FiMessageCircle />
+                          Comment ({post.commentCount || 0})
+                        </motion.button>
+
                         <span className="post-stat">
                           <FiHeart /> {post.likeCount || 0} {post.likeCount === 1 ? 'like' : 'likes'}
                         </span>
                       </div>
+
+                      {expandedPostId === getPostId(post) && (
+                        <div className="comments-section" style={{
+                          marginTop: '20px',
+                          paddingTop: '20px',
+                          borderTop: '1px solid var(--border-color)'
+                        }}>
+                          {/* Comments List */}
+                           <div className="comments-list" style={{
+                             display: 'flex',
+                             flexDirection: 'column',
+                             gap: '12px',
+                             marginBottom: '16px',
+                             maxHeight: '250px',
+                             overflowY: 'auto'
+                           }}>
+                             {(post.comments || []).length === 0 ? (
+                               <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', margin: '8px 0' }}>No comments yet. Start the conversation!</p>
+                             ) : (
+                               post.comments.map(c => {
+                                 const cAuthor = c.userId || {};
+                                 return (
+                                   <div key={c._id || c.id} style={{
+                                     display: 'flex',
+                                     alignItems: 'flex-start',
+                                     gap: '10px',
+                                     background: 'rgba(255, 255, 255, 0.02)',
+                                     padding: '10px 14px',
+                                     borderRadius: '8px',
+                                     border: '1px solid rgba(255, 255, 255, 0.05)',
+                                     textAlign: 'left'
+                                   }}>
+                                     <div style={{
+                                       width: '28px',
+                                       height: '28px',
+                                       borderRadius: '50%',
+                                       background: '#444',
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       justifyContent: 'center',
+                                       fontSize: '10px',
+                                       flexShrink: 0
+                                     }}>
+                                       {typeof cAuthor.avatar === 'string' && cAuthor.avatar.startsWith('http') ? (
+                                         <img src={cAuthor.avatar} alt={cAuthor.username} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                       ) : (
+                                         cAuthor.avatar || '👤'
+                                       )}
+                                     </div>
+                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%' }}>
+                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                         <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--white)' }}>{cAuthor.username || 'User'}</span>
+                                         <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{formatDate(c.createdAt)}</span>
+                                       </div>
+                                       <p style={{ fontSize: '13px', color: 'var(--gray-300)', lineHeight: '1.4', margin: 0 }}>{c.content}</p>
+                                     </div>
+                                   </div>
+                                 );
+                               })
+                             )}
+                           </div>
+                           
+                           {/* Add Comment Input */}
+                           <div style={{ display: 'flex', gap: '8px' }}>
+                             <input 
+                               type="text" 
+                               placeholder="Write a comment..." 
+                               value={commentText[getPostId(post)] || ''}
+                               onChange={(e) => setCommentText({ ...commentText, [getPostId(post)]: e.target.value })}
+                               onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(getPostId(post))}
+                               style={{
+                                 flex: 1,
+                                 background: 'var(--bg-secondary)',
+                                 border: '1px solid var(--border-color)',
+                                 borderRadius: '8px',
+                                 padding: '8px 12px',
+                                 color: 'var(--text-primary)',
+                                 fontSize: '14px'
+                               }}
+                             />
+                              <button 
+                                onClick={() => handleCommentSubmit(getPostId(post))}
+                                disabled={submittingComments[getPostId(post)]}
+                                style={{
+                                  background: 'var(--neon)',
+                                  color: '#000',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '8px 16px',
+                                  fontWeight: '600',
+                                  fontSize: '13px',
+                                  cursor: submittingComments[getPostId(post)] ? 'not-allowed' : 'pointer',
+                                  opacity: submittingComments[getPostId(post)] ? 0.7 : 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                              >
+                                {submittingComments[getPostId(post)] ? (
+                                  <>
+                                    <div className="loading-spinner-btn" style={{
+                                      width: '12px',
+                                      height: '12px',
+                                      border: '2px solid rgba(0,0,0,0.3)',
+                                      borderTopColor: '#000',
+                                      borderRadius: '50%',
+                                      animation: 'spin 0.6s linear infinite'
+                                    }}></div>
+                                    <span>Sending...</span>
+                                  </>
+                                ) : (
+                                  'Send'
+                                )}
+                              </button>
+                           </div>
+                         </div>
+                       )}
                     </motion.div>
                   );
                 })

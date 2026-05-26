@@ -8,7 +8,7 @@ import '../home.css';
 import { useParams } from 'react-router-dom';
 
 const Profile = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, fetchUser } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const viewingUserId = params.id;
@@ -52,19 +52,23 @@ const Profile = () => {
     const unsubscribe = subscribeToDataChanges((event) => {
       if (!event?.scope) return;
 
-      if (event.userId && String(event.userId) !== String(targetId)) {
-        return;
-      }
+      const isRelevant = !event.userId || 
+                         String(event.userId) === String(targetId) || 
+                         (event.targetUserId && String(event.targetUserId) === String(targetId));
+      if (!isRelevant) return;
 
       if (['posts', 'likes', 'habits', 'dashboard', 'profile', 'achievements'].includes(event.scope)) {
         fetchPosts();
         fetchStats(targetId);
         fetchAchievements(targetId);
+        if (isOwnProfile && fetchUser) {
+          fetchUser();
+        }
       }
     });
 
     return unsubscribe;
-  }, [user, viewingUserId]);
+  }, [user, viewingUserId, fetchUser, isOwnProfile]);
 
   const fetchViewedUser = async (id) => {
     try {
@@ -98,38 +102,18 @@ const Profile = () => {
 
   const fetchAchievements = async (targetId) => {
     try {
-      // Get all achievements
-      const allAchievementsResponse = await achievementsAPI.getAll();
-      const allAchievements = allAchievementsResponse.data;
-      
-      // Get user's unlocked achievements (use public endpoint when viewing another user)
-      let userAchievementsResponse;
+      let response;
       if (targetId && viewingUserId) {
         try {
-          userAchievementsResponse = await authAPI.getUserAchievements(targetId);
+          response = await authAPI.getUserAchievements(targetId);
         } catch (err) {
-          userAchievementsResponse = { data: [] };
+          response = { data: [] };
         }
       } else {
-        userAchievementsResponse = await authAPI.getAchievements();
+        response = await authAPI.getAchievements();
       }
-      const userAchList = userAchievementsResponse.data || [];
-      // Debug: log the returned unlocked achievements for inspection
-      console.log('User achievements response for', targetId, userAchList);
-      // Build lookup by id, name and displayName to be robust against different shapes
-      const unlockedIds = new Set(userAchList.map(a => String(a.id)));
-      const unlockedNames = new Set(userAchList.map(a => a.name));
-      const unlockedDisplayNames = new Set(userAchList.map(a => a.displayName));
-      // If the API returned UserAchievement records, they may reference the achievement via `achievementId`
-      const unlockedByRefId = new Set(userAchList.map(a => a.achievementId ? String(a.achievementId) : null));
-
-      // Mark which achievements are unlocked (match by id or name)
-      const achievementsWithStatus = allAchievements.map(achievement => ({
-        ...achievement,
-        unlocked: unlockedIds.has(String(achievement.id)) || unlockedNames.has(achievement.name) || unlockedDisplayNames.has(achievement.displayName) || unlockedByRefId.has(String(achievement.id))
-      }));
       
-      setAchievements(achievementsWithStatus);
+      setAchievements(response.data || []);
     } catch (error) {
       console.error('Failed to fetch achievements:', error);
     } finally {

@@ -26,7 +26,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [stats, setStats] = useState({ totalUsers: 0, totalHabits: 0, totalCheckins: 0 });
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+
   const { login, register, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -58,9 +58,9 @@ const Login = () => {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle('light-mode', theme === 'light');
-    document.body.classList.toggle('dark-mode', theme === 'dark');
-  }, [theme]);
+    document.body.classList.remove('light-mode');
+    document.body.classList.add('dark-mode');
+  }, []);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -110,11 +110,7 @@ const Login = () => {
     return true;
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -232,9 +228,7 @@ const Login = () => {
           </Link>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button onClick={toggleTheme} className="theme-toggle" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-              {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
-            </button>
+
             <Link to="/" className="back-link" style={{ textDecoration: 'none', fontWeight: 500 }}>Back</Link>
           </div>
         </div>

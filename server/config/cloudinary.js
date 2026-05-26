@@ -17,6 +17,21 @@ const storage = new CloudinaryStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const postMediaStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith('video');
+    return {
+      folder: 'aadat_posts',
+      resource_type: isVideo ? 'video' : 'image',
+      allowed_formats: isVideo 
+        ? ['mp4', 'mov', 'avi', 'mkv', 'webm'] 
+        : ['jpg', 'png', 'jpeg', 'webp', 'gif'],
+    };
+  }
+});
 
-module.exports = { cloudinary, upload };
+const upload = multer({ storage: storage });
+const uploadPostMedia = multer({ storage: postMediaStorage });
+
+module.exports = { cloudinary, upload, uploadPostMedia };

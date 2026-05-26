@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     maxlength: 150,
     default: 'Building habits in public.'
+  },
+  warnings: {
+    type: Number,
+    default: 0
+  },
+  isSuspended: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

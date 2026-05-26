@@ -36,7 +36,7 @@
 }
 
 .main-container {
-    margin-top: 64px !important;
+    margin-top: 96px !important;
 }
 
 .nav-container {
@@ -1321,11 +1321,13 @@ textarea {
     position: absolute;
     top: 56px;
     right: 0;
-    width: 320px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    width: 340px;
+    background: rgba(24, 28, 31, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 255, 136, 0.2);
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 255, 136, 0.08);
     opacity: 0;
     pointer-events: none;
     transform: translateY(-10px);
@@ -4847,7 +4849,7 @@ body.light-mode .avatar-option {
 }
 
 .main-container {
-    margin-top: 64px !important;
+    margin-top: 96px !important;
 }
 
 /* Prevent icon floating bugs */
@@ -4903,7 +4905,7 @@ body.light-mode .avatar-option {
 }
 
 .main-container {
-    margin-top: 80px !important;
+    margin-top: 96px !important;
     /* was 64px */
 }
 

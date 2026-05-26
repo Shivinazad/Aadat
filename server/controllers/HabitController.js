@@ -35,6 +35,11 @@ class HabitController {
                 roadmap,
                 userId: req.user.id
             });
+
+            // Check achievements
+            const AchievementService = require('../services/AchievementService');
+            await AchievementService.checkAndUnlock(req.user.id);
+
             res.status(201).json(habit);
         } catch (error) {
             console.error('Error in HabitController.create:', error);

@@ -10,7 +10,6 @@ const Navbar = () => {
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const notificationRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const getUserId = (targetUser) => targetUser?.id || targetUser?._id;
@@ -37,9 +36,9 @@ const Navbar = () => {
   }, [user]);
 
   useEffect(() => {
-    document.body.classList.toggle('light-mode', theme === 'light');
-    document.body.classList.toggle('dark-mode', theme === 'dark');
-  }, [theme]);
+    document.body.classList.remove('light-mode');
+    document.body.classList.add('dark-mode');
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -76,11 +75,7 @@ const Navbar = () => {
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-  };
+
 
   if (!user) return null;
 
@@ -138,28 +133,65 @@ const Navbar = () => {
                       <p>No new notifications</p>
                     </div>
                   ) : (
-                    notifications.map((notif) => (
-                      <div key={notif.id} className="notification-item">
-                        <div className="notification-content">
-                          <strong>{notif.senderUsername}</strong> {notif.message}
+                    notifications.map((notif) => {
+                      const sender = notif.senderId || {};
+                      const senderName = sender.username || notif.senderUsername || 'Someone';
+                      const senderAvatar = sender.avatar || '👤';
+                      
+                      const getNotificationIcon = (type) => {
+                        if (type === 'like') return '❤️';
+                        if (type === 'comment') return '💬';
+                        if (type === 'invite') return '✉️';
+                        return '🔔';
+                      };
+
+                      return (
+                        <div key={notif._id || notif.id} className="notification-item" style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          borderBottom: '1px solid var(--border-color)',
+                          transition: 'var(--transition)'
+                        }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'var(--bg-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            flexShrink: 0
+                          }}>
+                            {typeof senderAvatar === 'string' && senderAvatar.startsWith('http') ? (
+                              <img src={senderAvatar} alt={senderName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                              senderAvatar
+                            )}
+                          </div>
+                          
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.4' }}>
+                              <strong style={{ color: 'var(--white)' }}>{senderName}</strong> {notif.message}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                              {new Date(notif.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: '14px' }}>
+                            {getNotificationIcon(notif.type)}
+                          </div>
                         </div>
-                        <div className="notification-time">
-                          {new Date(notif.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
             )}
           </div>
-          <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle dark mode">
-            {theme === 'dark' ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
-            )}
-          </button>
           <Link to="/profile" className="user-avatar" aria-label="Profile">{renderAvatarElement()}</Link>
           {/* Hamburger for mobile */}
           <button className={`hamburger${mobileMenuOpen ? ' open' : ''}`} aria-label="Toggle menu" onClick={() => setMobileMenuOpen((open) => !open)}>
@@ -175,7 +207,6 @@ const Navbar = () => {
           to="/dashboard" 
           className={`nav-link ${isActive('/dashboard')}`} 
           onClick={() => setMobileMenuOpen(false)}
-          style={theme === 'light' ? { color: '#000000 !important' } : {}}
         >
           Dashboard
         </Link>
@@ -183,7 +214,6 @@ const Navbar = () => {
           to="/community" 
           className={`nav-link ${isActive('/community')}`} 
           onClick={() => setMobileMenuOpen(false)}
-          style={theme === 'light' ? { color: '#000000 !important' } : {}}
         >
           Community
         </Link>
@@ -191,7 +221,6 @@ const Navbar = () => {
           to="/leaderboard" 
           className={`nav-link ${isActive('/leaderboard')}`} 
           onClick={() => setMobileMenuOpen(false)}
-          style={theme === 'light' ? { color: '#000000 !important' } : {}}
         >
           Leaderboard
         </Link>
