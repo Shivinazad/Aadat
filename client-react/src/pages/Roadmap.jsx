@@ -168,6 +168,7 @@ const Roadmap = () => {
                 roadmap={selectedHabit.roadmap}
                 habitId={getHabitId(selectedHabit)}
                 aiDescription={selectedHabit.aiDescription}
+                roadmapProgress={selectedHabit.roadmapProgress}
               />
             </motion.div>
           )}

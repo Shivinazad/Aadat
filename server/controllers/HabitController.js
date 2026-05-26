@@ -5,8 +5,38 @@ class HabitController {
     static async getAll(req, res) {
         try {
             const habits = await HabitService.getAllByUserId(req.user.id);
-            res.json(habits);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let updatedAny = false;
+            const processedHabits = [];
+            
+            for (const habit of habits) {
+                if (habit.lastCheckinDate) {
+                    const lastCheckin = new Date(habit.lastCheckinDate);
+                    lastCheckin.setHours(0, 0, 0, 0);
+                    
+                    // If last checkin is older than yesterday, active streak is broken
+                    if (lastCheckin < yesterday && habit.currentStreak > 0) {
+                        habit.currentStreak = 0;
+                        await habit.save();
+                        updatedAny = true;
+                    }
+                }
+                processedHabits.push(habit);
+            }
+            
+            if (updatedAny) {
+                const AchievementService = require('../services/AchievementService');
+                await AchievementService.checkAndUnlock(req.user.id);
+            }
+            
+            res.json(processedHabits);
         } catch (error) {
+            console.error('Error in HabitController.getAll:', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
@@ -49,10 +79,48 @@ class HabitController {
 
     static async update(req, res) {
         try {
-            const habit = await HabitService.update(req.params.id, req.body);
-            if (!habit) return res.status(404).json({ message: 'Habit not found' });
-            res.json(habit);
+            const habitId = req.params.id;
+            const oldHabit = await HabitService.getById(habitId);
+            if (!oldHabit) return res.status(404).json({ message: 'Habit not found' });
+
+            const updatedHabit = await HabitService.update(habitId, req.body);
+            
+            // If roadmapProgress was updated, evaluate checkpoint completions
+            if (req.body.roadmapProgress && oldHabit.roadmap) {
+                const oldProgress = oldHabit.roadmapProgress || { completed: [], current: 0 };
+                const newProgress = req.body.roadmapProgress;
+                
+                const oldCompleted = oldProgress.completed || [];
+                const newCompleted = newProgress.completed || [];
+                
+                const newlyCompleted = newCompleted.filter(c => !oldCompleted.includes(c));
+                
+                if (newlyCompleted.length > 0) {
+                    const UserService = require('../services/UserService');
+                    const AchievementService = require('../services/AchievementService');
+                    
+                    let xpEarned = 0;
+                    for (const cp of newlyCompleted) {
+                        xpEarned += 20; // +20 XP per checkpoint
+                    }
+                    
+                    const totalCheckpoints = oldHabit.roadmap.length || 0;
+                    const isEntirelyCompleted = totalCheckpoints > 0 && newCompleted.length === totalCheckpoints && oldCompleted.length < totalCheckpoints;
+                    
+                    if (isEntirelyCompleted) {
+                        xpEarned += 100; // +100 XP bonus for completing the roadmap
+                    }
+                    
+                    if (xpEarned > 0) {
+                        await UserService.awardXP(oldHabit.userId, xpEarned);
+                        await AchievementService.checkAndUnlock(oldHabit.userId);
+                    }
+                }
+            }
+
+            res.json(updatedHabit);
         } catch (error) {
+            console.error('Error in HabitController.update:', error);
             res.status(500).json({ message: 'Server error' });
         }
     }

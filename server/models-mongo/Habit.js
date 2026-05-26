@@ -38,6 +38,10 @@ const habitSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: null
   },
+  roadmapProgress: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   targetPercentage: {
     type: Number,
     default: 70

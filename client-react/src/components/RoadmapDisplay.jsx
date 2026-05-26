@@ -3,28 +3,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiCheck, FiCircle, FiCheckCircle, FiLock, FiArrowLeft, FiCheckSquare, FiBookOpen, FiTarget, FiClock } from 'react-icons/fi';
 import '../styles/RoadmapDisplay.css';
 
-const RoadmapDisplay = ({ roadmap, habitId, aiDescription }) => {
+import { habitsAPI } from '../services/api';
+
+const RoadmapDisplay = ({ roadmap, habitId, aiDescription, roadmapProgress }) => {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
   const [completedCheckpoints, setCompletedCheckpoints] = useState([]);
   const [currentCheckpoint, setCurrentCheckpoint] = useState(0);
   const [completedSteps, setCompletedSteps] = useState({});
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem(`roadmap_progress_${habitId}`);
-    if (savedProgress) {
-      const progress = JSON.parse(savedProgress);
-      setCompletedCheckpoints(progress.completed || []);
-      setCurrentCheckpoint(progress.current || 0);
-      setCompletedSteps(progress.completedSteps || {});
+    if (roadmapProgress) {
+      setCompletedCheckpoints(roadmapProgress.completed || []);
+      setCurrentCheckpoint(roadmapProgress.current || 0);
+      setCompletedSteps(roadmapProgress.completedSteps || {});
+    } else {
+      // Fallback/Legacy local storage read
+      const savedProgress = localStorage.getItem(`roadmap_progress_${habitId}`);
+      if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        setCompletedCheckpoints(progress.completed || []);
+        setCurrentCheckpoint(progress.current || 0);
+        setCompletedSteps(progress.completedSteps || {});
+      } else {
+        setCompletedCheckpoints([]);
+        setCurrentCheckpoint(0);
+        setCompletedSteps({});
+      }
     }
-  }, [habitId]);
+  }, [habitId, roadmapProgress]);
 
-  const saveProgress = (completed, current, steps = completedSteps) => {
-    localStorage.setItem(`roadmap_progress_${habitId}`, JSON.stringify({
+  const saveProgress = async (completed, current, steps = completedSteps) => {
+    const progress = {
       completed,
       current,
       completedSteps: steps
-    }));
+    };
+    
+    // Update local state first (optimistic UI)
+    setCompletedCheckpoints(completed);
+    setCurrentCheckpoint(current);
+    setCompletedSteps(steps);
+
+    // Write to localStorage as quick fallback
+    localStorage.setItem(`roadmap_progress_${habitId}`, JSON.stringify(progress));
+
+    // Save to database
+    try {
+      await habitsAPI.update(habitId, { roadmapProgress: progress });
+    } catch (error) {
+      console.error('Failed to sync roadmap progress to DB:', error);
+    }
   };
 
   if (!roadmap || roadmap.length === 0) {

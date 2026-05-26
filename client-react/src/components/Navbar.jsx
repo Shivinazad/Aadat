@@ -174,7 +174,15 @@ const Navbar = () => {
                           
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
                             <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.4' }}>
-                              <strong style={{ color: 'var(--white)' }}>{senderName}</strong> {notif.message}
+                              {notif.type === 'achievement' ? (
+                                <>
+                                  <strong style={{ color: 'var(--white)' }}>You</strong> {notif.message}
+                                </>
+                              ) : (
+                                <>
+                                  <strong style={{ color: 'var(--white)' }}>{senderName}</strong> {notif.message}
+                                </>
+                              )}
                             </div>
                             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                               {new Date(notif.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}

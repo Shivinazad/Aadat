@@ -352,57 +352,75 @@ const Dashboard = () => {
         <div className="content-wrapper">
           {/* Left Column - Main Content */}
           <div className="main-column">
-            {/* Welcome Section */}
-            <motion.section
-              className="welcome-section"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="welcome-content">
-                <motion.div
-                  className="welcome-badge"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                >
-                  <div className="live-dot"></div>
-                  <span>Welcome back</span>
-                </motion.div>
-                <motion.h1
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className="continue-journey-title"
-                >
-                  Continue your journey
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                >
-                  Track your progress, build consistency, and achieve your goals one habit at a time.
-                </motion.p>
-              </div>
-              <motion.div
-                className="welcome-visual"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <div className="streak-card">
-                  <div className="streak-icon">🔥</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
-                    <div className="streak-number" style={{ lineHeight: 1, marginBottom: 0 }}>
-                      <CountUp end={maxStreak} duration={1.5} />
+            {/* Mobile-only Profile & Streak Combined Card */}
+            <div className="profile-card mobile-only" style={{ padding: '24px', marginBottom: '16px' }}>
+              <div className="profile-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <div className="avatar-ring-wrapper">
+                  <div className="avatar-ring-outer">
+                    <div className="avatar-ring-inner">
+                      <div className="avatar-circle" style={{ width: '60px', height: '60px', borderRadius: '50%', border: 'none' }}>{getAvatarElement()}</div>
                     </div>
-                    <div className="streak-label" style={{ marginTop: 0 }}>DAY STREAK</div>
                   </div>
                 </div>
-              </motion.div>
+                <div className="profile-info" style={{ textAlign: 'left' }}>
+                  <h3 className="profile-name" style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--white)' }}>{user?.username}</h3>
+                  {(() => {
+                    let lvlName = 'Novice Builder';
+                    if (currentLevel >= 3 && currentLevel < 6) lvlName = 'Habit Pioneer';
+                    else if (currentLevel >= 6 && currentLevel < 10) lvlName = 'Consistency Sage';
+                    else if (currentLevel >= 10) lvlName = 'Habit Overlord';
+                    return <span style={{ fontSize: '11px', color: 'var(--neon)', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>{lvlName}</span>;
+                  })()}
+                  <div style={{ marginTop: '4px' }}>
+                    <Link to={`/profile/${getUserId(user)}`} className="view-profile-link" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>View profile →</Link>
+                  </div>
+                </div>
+              </div>
 
-            </motion.section>
+              {/* Combined Day Streak Pill */}
+              <div className="profile-streak-badge" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'rgba(255, 100, 0, 0.1)',
+                border: '1px solid rgba(255, 100, 0, 0.25)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                color: '#ff9800',
+                fontWeight: '800',
+                fontSize: '14px',
+                letterSpacing: '0.05em'
+              }}>
+                🔥 {maxStreak} DAY STREAK
+              </div>
+
+              <div className="level-section" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)', marginBottom: '16px' }}>
+                <div className="level-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                  <span className="level-text" style={{ fontWeight: '700', color: 'var(--white)' }}>Rank Level {user?.user_level || 1}</span>
+                  <span className="xp-count" style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{user?.user_xp || 0} / {nextXp} XP</span>
+                </div>
+                <div className="progress-bar-container" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div className="progress-bar" style={{ width: `${xpPercentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--neon) 0%, #00bfa5 100%)', boxShadow: 'var(--neon-glow)' }}></div>
+                </div>
+              </div>
+
+              <div className="achievements-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                <div className="achievement-item unlocked" style={{ background: 'rgba(255, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }} title="Fire Gold Check-in">
+                  <span className="achievement-icon">🔥</span>
+                </div>
+                <div className="achievement-item unlocked" style={{ background: 'rgba(0, 245, 160, 0.05)', border: '1px solid rgba(0, 245, 160, 0.1)' }} title="Social Butterfly">
+                  <span className="achievement-icon">🦋</span>
+                </div>
+                <div className="achievement-item locked" title="Unlock more in your journey!">
+                  <span className="achievement-icon">🔒</span>
+                </div>
+                <div className="achievement-item locked" title="Unlock more in your journey!">
+                  <span className="achievement-icon">🏆</span>
+                </div>
+              </div>
+            </div>
 
             {/* Today's Habits */}
             <section className="habits-section">
@@ -499,81 +517,115 @@ const Dashboard = () => {
                     return (
                       <motion.div
                         key={habitId}
-                        className="habit-item"
+                        className={`habit-item ${(() => {
+                          const categoryLower = (habit.habitCategory || '').toLowerCase();
+                          if (categoryLower.includes('health') || categoryLower.includes('mind') || categoryLower.includes('spirit') || categoryLower.includes('meditat')) {
+                            return 'habit-quest-violet';
+                          } else if (categoryLower.includes('fit') || categoryLower.includes('sport') || categoryLower.includes('gym') || categoryLower.includes('run') || categoryLower.includes('work')) {
+                            return 'habit-quest-orange';
+                          }
+                          return 'habit-quest-cyan';
+                        })()}`}
                         style={{ zIndex: settingsMenuOpen === habitId ? 50 : 1, position: 'relative' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: index * 0.1 }}
                         whileHover={{ y: -4, transition: { duration: 0.2 } }}
                       >
-                        <div className="habit-main-info">
-                          <div className="habit-title-row">
-                            <span className="habit-title">{habit.habitTitle}</span>
-                            {habit.habitCategory && (
-                              <span className="habit-category-badge">{habit.habitCategory}</span>
+                        <div className="habit-item-header">
+                          <div className="habit-main-info" style={{ textAlign: 'left' }}>
+                            <div className="habit-title-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                              <span className="habit-title" style={{ fontSize: '18px', fontWeight: '700', color: 'var(--white)' }}>{habit.habitTitle}</span>
+                              {habit.habitCategory && (
+                                <span className="habit-category-badge" style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>{habit.habitCategory}</span>
+                              )}
+                            </div>
+                            {lastCheckin && (
+                              <span className="last-checkin-text" style={{ fontSize: '12px', marginTop: '6px', display: 'block' }}>
+                                {isCheckedInToday ? '⚡ Checked in today' :
+                                  daysSinceLastCheckin === 1 ? '⏰ Last check-in: Yesterday' :
+                                    `📅 Last check-in: ${daysSinceLastCheckin} days ago`}
+                              </span>
                             )}
+                            <div className="habit-mini-progress">
+                              {[1, 2, 3, 4, 5].map((dot, i) => {
+                                const isActive = isCheckedInToday ? (i < Math.min(5, habit.currentStreak || 1)) : (i < Math.min(5, habit.currentStreak));
+                                return (
+                                  <div 
+                                    key={dot} 
+                                    className={`progress-dot ${isActive ? 'active' : ''}`}
+                                    title={`${habit.currentStreak} day streak`}
+                                  />
+                                );
+                              })}
+                            </div>
                           </div>
-                          {lastCheckin && (
-                            <span className="last-checkin-text">
-                              {isCheckedInToday ? '✅ Checked in today' :
-                                daysSinceLastCheckin === 1 ? '📅 Last check-in: Yesterday' :
-                                  `📅 Last check-in: ${daysSinceLastCheckin} days ago`}
-                            </span>
-                          )}
                         </div>
-                        <span className="streak-count">🔥 {habit.currentStreak} days</span>
-                        {((Array.isArray(habit.roadmap) && habit.roadmap.length > 0) || (!Array.isArray(habit.roadmap) && habit.roadmap)) && (
-                          <Link 
-                            to={`/roadmap/${habitId}`} 
-                            className="btn btn-secondary btn-roadmap"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <FiMap /> Roadmap
-                          </Link>
-                        )}
-                        <button
-                          className={`btn btn-primary btn-checkin ${isCheckedInToday ? 'checked-in' : ''}`}
-                          onClick={() => openCheckinModal(habit)}
-                          disabled={isCheckedInToday}
-                        >
-                          {isCheckedInToday ? '✓ Done' : 'Check In'}
-                        </button>
-                        <div className="habit-settings" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            className="settings-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSettingsMenu(habitId);
-                            }}
-                          >
-                            <FiMoreVertical />
-                          </button>
-                          <AnimatePresence>
-                            {settingsMenuOpen === habitId && (
-                              <motion.div
-                                className="settings-menu"
-                                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                                transition={{ duration: 0.2 }}
+
+                        <div className="habit-item-footer">
+                          <span className="streak-count" style={{ fontSize: '15px', fontWeight: '700', color: 'var(--white)', whiteSpace: 'nowrap' }}>🔥 {habit.currentStreak} days</span>
+                          <div className="habit-actions">
+                            {((Array.isArray(habit.roadmap) && habit.roadmap.length > 0) || (!Array.isArray(habit.roadmap) && habit.roadmap)) && (
+                              <Link 
+                                to={`/roadmap/${habitId}`} 
+                                className="btn btn-secondary btn-roadmap"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', fontSize: '13px' }}
                               >
-                                <button
-                                  className="settings-menu-item"
-                                    onClick={() => openEditModal(habit)}
-                                >
-                                  <FiEdit2 />
-                                  Edit Habit
-                                </button>
-                                <button
-                                  className="settings-menu-item delete"
-                                  onClick={() => openDeleteModal(habit)}
-                                >
-                                  <FiTrash2 />
-                                  Delete Habit
-                                </button>
-                              </motion.div>
+                                <FiMap /> Roadmap
+                              </Link>
                             )}
-                          </AnimatePresence>
+                            <button
+                              className={`btn btn-primary btn-checkin ${isCheckedInToday ? 'checked-in' : ''}`}
+                              onClick={() => openCheckinModal(habit)}
+                              disabled={isCheckedInToday}
+                              style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '8px' }}
+                            >
+                              {isCheckedInToday ? (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FiCheck /> Done</span>
+                              ) : (
+                                'Check In'
+                              )}
+                            </button>
+                          </div>
+                          
+                          <div className="habit-settings" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="settings-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSettingsMenu(habitId);
+                              }}
+                            >
+                              <FiMoreVertical />
+                            </button>
+                            <AnimatePresence>
+                              {settingsMenuOpen === habitId && (
+                                <motion.div
+                                  className="settings-menu"
+                                  initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <button
+                                    className="settings-menu-item"
+                                    onClick={() => openEditModal(habit)}
+                                  >
+                                    <FiEdit2 />
+                                    Edit Habit
+                                  </button>
+                                  <button
+                                    className="settings-menu-item delete"
+                                    onClick={() => openDeleteModal(habit)}
+                                  >
+                                    <FiTrash2 />
+                                    Delete Habit
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -581,6 +633,66 @@ const Dashboard = () => {
                 )}
               </div>
             </section>
+
+            {/* Mobile-only Consistency Plant (Moved under habits) */}
+            {(() => {
+              let plantEmoji = '🌱';
+              let stageName = 'Seedling';
+              let nextStageText = 'Keep a 3-day streak to grow into a Sapling!';
+              if (maxStreak >= 3 && maxStreak < 7) {
+                plantEmoji = '🌿';
+                stageName = 'Sapling';
+                nextStageText = 'Reach a 7-day streak to grow into a Sprout!';
+              } else if (maxStreak >= 7 && maxStreak < 15) {
+                plantEmoji = '🎋';
+                stageName = 'Sprout';
+                nextStageText = 'Maintain a 15-day streak to grow into a Blossom!';
+              } else if (maxStreak >= 15) {
+                plantEmoji = '🌸';
+                stageName = 'Blossom';
+                nextStageText = 'Maximum growth stage! You are a master gardener!';
+              }
+
+              return (
+                <div className="plant-card mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div className="plant-emoji-container">{plantEmoji}</div>
+                    <div className="plant-content" style={{ textAlign: 'left' }}>
+                      <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--white)' }}>{stageName} Stage</h4>
+                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--gray-300)' }}>
+                        Maintained a <strong>{maxStreak}-day</strong> streak!
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '10px', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'left' }}>
+                    💡 {nextStageText}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Mobile-only Stats Card */}
+            <motion.div
+              className="stats-card mobile-only"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              style={{ marginBottom: '16px' }}
+            >
+              <h4>This Week's Progress</h4>
+              <div className="stat-row">
+                <span className="stat-label">Habits worked on</span>
+                <span className="stat-value"><CountUp end={weeklyStats.completedHabits} duration={1.5} /></span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Total check-ins</span>
+                <span className="stat-value"><CountUp end={weeklyStats.totalCheckins} duration={1.5} /></span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Consistency rate</span>
+                <span className="stat-value neon"><CountUp end={weeklyStats.successRate} duration={1.5} />%</span>
+              </div>
+            </motion.div>
 
             {/* Quick Actions Grid */}
             <section className="quick-actions-section">
@@ -682,55 +794,115 @@ const Dashboard = () => {
           {/* Right Column - Sidebar */}
           <aside className="sidebar">
             {/* Profile Card */}
-            <div className="profile-card">
-              <div className="profile-header">
-                <div className="avatar-circle">{getAvatarElement()}</div>
-                <div className="profile-info">
-                  <h3 className="profile-name">{user?.username}</h3>
-                  <Link to={`/profile/${getUserId(user)}`} className="view-profile-link">View profile →</Link>
+            <div className="profile-card desktop-only" style={{ padding: '24px' }}>
+              <div className="profile-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <div className="avatar-ring-wrapper">
+                  <div className="avatar-ring-outer">
+                    <div className="avatar-ring-inner">
+                      <div className="avatar-circle" style={{ width: '60px', height: '60px', borderRadius: '50%', border: 'none' }}>{getAvatarElement()}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="profile-info" style={{ textAlign: 'left' }}>
+                  <h3 className="profile-name" style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--white)' }}>{user?.username}</h3>
+                  {(() => {
+                    let lvlName = 'Novice Builder';
+                    if (currentLevel >= 3 && currentLevel < 6) lvlName = 'Habit Pioneer';
+                    else if (currentLevel >= 6 && currentLevel < 10) lvlName = 'Consistency Sage';
+                    else if (currentLevel >= 10) lvlName = 'Habit Overlord';
+                    return <span style={{ fontSize: '11px', color: 'var(--neon)', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>{lvlName}</span>;
+                  })()}
+                  <div style={{ marginTop: '4px' }}>
+                    <Link to={`/profile/${getUserId(user)}`} className="view-profile-link" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>View profile →</Link>
+                  </div>
                 </div>
               </div>
 
-              <div className="level-section">
-                <div className="level-header">
-                  <span className="level-text">Level {user?.user_level}</span>
-                  <span className="xp-count">{user?.user_xp} / {nextXp} XP</span>
+              {/* Combined Day Streak Pill */}
+              <div className="profile-streak-badge" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'rgba(255, 100, 0, 0.1)',
+                border: '1px solid rgba(255, 100, 0, 0.25)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                color: '#ff9800',
+                fontWeight: '800',
+                fontSize: '14px',
+                letterSpacing: '0.05em'
+              }}>
+                🔥 {maxStreak} DAY STREAK
+              </div>
+
+              <div className="level-section" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)', marginBottom: '16px' }}>
+                <div className="level-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                  <span className="level-text" style={{ fontWeight: '700', color: 'var(--white)' }}>Rank Level {user?.user_level || 1}</span>
+                  <span className="xp-count" style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{user?.user_xp || 0} / {nextXp} XP</span>
                 </div>
-                <div className="progress-bar-container">
-                  <div className="progress-bar" style={{ width: `${xpPercentage}%` }}></div>
+                <div className="progress-bar-container" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div className="progress-bar" style={{ width: `${xpPercentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--neon) 0%, #00bfa5 100%)', boxShadow: 'var(--neon-glow)' }}></div>
                 </div>
               </div>
 
-              <div className="achievements-grid">
-                <div className="achievement-item locked">
-                  <span className="achievement-icon">🥉</span>
-                </div>
-                <div className="achievement-item unlocked">
+              <div className="achievements-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                <div className="achievement-item unlocked" style={{ background: 'rgba(255, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }} title="Fire Gold Check-in">
                   <span className="achievement-icon">🔥</span>
                 </div>
-                <div className="achievement-item locked">
-                  <span className="achievement-icon">⭐</span>
+                <div className="achievement-item unlocked" style={{ background: 'rgba(0, 245, 160, 0.05)', border: '1px solid rgba(0, 245, 160, 0.1)' }} title="Social Butterfly">
+                  <span className="achievement-icon">🦋</span>
                 </div>
-                <div className="achievement-item locked">
+                <div className="achievement-item locked" title="Unlock more in your journey!">
+                  <span className="achievement-icon">🔒</span>
+                </div>
+                <div className="achievement-item locked" title="Unlock more in your journey!">
                   <span className="achievement-icon">🏆</span>
                 </div>
               </div>
             </div>
 
             {/* Consistency Plant */}
-            <div className="plant-card">
-              <div className="plant-visual">
-                <div className="plant-emoji">🌱</div>
-              </div>
-              <div className="plant-content">
-                <h4>Your Growth</h4>
-                <p>Maintained a <strong>{maxStreak}-day</strong> streak! Keep nurturing your habits.</p>
-              </div>
-            </div>
+            {(() => {
+              let plantEmoji = '🌱';
+              let stageName = 'Seedling';
+              let nextStageText = 'Keep a 3-day streak to grow into a Sapling!';
+              if (maxStreak >= 3 && maxStreak < 7) {
+                plantEmoji = '🌿';
+                stageName = 'Sapling';
+                nextStageText = 'Reach a 7-day streak to grow into a Sprout!';
+              } else if (maxStreak >= 7 && maxStreak < 15) {
+                plantEmoji = '🎋';
+                stageName = 'Sprout';
+                nextStageText = 'Maintain a 15-day streak to grow into a Blossom!';
+              } else if (maxStreak >= 15) {
+                plantEmoji = '🌸';
+                stageName = 'Blossom';
+                nextStageText = 'Maximum growth stage! You are a master gardener!';
+              }
+
+              return (
+                <div className="plant-card desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div className="plant-emoji-container">{plantEmoji}</div>
+                    <div className="plant-content" style={{ textAlign: 'left' }}>
+                      <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--white)' }}>{stageName} Stage</h4>
+                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--gray-300)' }}>
+                        Maintained a <strong>{maxStreak}-day</strong> streak!
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '10px', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'left' }}>
+                    💡 {nextStageText}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick Stats */}
             <motion.div
-              className="stats-card"
+              className="stats-card desktop-only"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}

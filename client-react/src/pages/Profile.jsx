@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { achievementsAPI, postsAPI, authAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import { subscribeToDataChanges } from '../services/socket';
+import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import '../home.css';
-import { useParams } from 'react-router-dom';
 
 const Profile = () => {
   const { user, logout, updateUser, fetchUser } = useAuth();
@@ -27,6 +27,9 @@ const Profile = () => {
     totalHabits: 0,
     totalCheckins: 0
   });
+  const [expandedPostId, setExpandedPostId] = useState(null);
+  const [commentText, setCommentText] = useState({});
+  const [submittingComments, setSubmittingComments] = useState({});
 
   const avatarOptions = ['👤', '😀', '😎', '🤓', '🥳', '🤠', '🧑‍💻', '🧑‍🎨', '🧑‍🚀', '🧑‍🔬', '🦸', '🧙', '🧚', '🧛', '🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🦄', '🐧', '🦉', '🦋', '🌟', '⚡', '🔥', '💎'];
 
@@ -82,22 +85,37 @@ const Profile = () => {
 
   const fetchStats = async (targetId) => {
     try {
-      if (!isOwnProfile && viewingUserId) {
-        // viewing another user's profile
-        try {
-          const response = await authAPI.getUserStats(viewingUserId);
-          setStats(response.data);
-        } catch (err) {
-          console.warn('Failed to fetch viewed user stats:', err);
-          setStats((s) => s);
-        }
-      } else {
-        const response = await authAPI.getUserStats();
-        setStats(response.data);
-      }
+      // Use targetId param directly to avoid stale closure issues
+      const statsUserId = targetId || (viewingUserId || null);
+      const response = await authAPI.getUserStats(statsUserId !== getUserId(user) ? statsUserId : null);
+      setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch user stats:', error);
     }
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    const text = commentText[postId] || '';
+    if (!text.trim()) return;
+    setSubmittingComments(prev => ({ ...prev, [postId]: true }));
+    try {
+      await postsAPI.comment(postId, text);
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
+      fetchPosts();
+    } catch (error) {
+      const errorMsg = error.response?.data?.msg || 'Failed to post comment';
+      alert(errorMsg);
+    } finally {
+      setSubmittingComments(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const fetchAchievements = async (targetId) => {
@@ -380,56 +398,154 @@ const Profile = () => {
                 posts.map((post) => {
                   const author = post.userId || post.User;
                   const habit = post.habitId || post.Habit;
+                  const authorUsername = author?.username || viewedUser?.username || user?.username || 'User';
+                  const authorAvatar = author?.avatar || (isOwnProfile ? user?.avatar : viewedUser?.avatar) || '👤';
+                  const habitTitle = habit?.habitTitle || 'General Post';
+                  const isLiked = post.isLikedByCurrentUser;
+                  const postId = getPostId(post);
+
+                  const renderAvatar = (avatar) => {
+                    if (!avatar) return '👤';
+                    if (typeof avatar === 'string' && avatar.startsWith('http')) {
+                      return (
+                        <img
+                          src={avatar}
+                          alt={authorUsername}
+                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', background: '#222' }}
+                        />
+                      );
+                    }
+                    return avatar;
+                  };
 
                   return (
-                    <div key={getPostId(post)} className="post-card">
+                    <div key={postId} className="post-card">
                       <div className="post-header">
                         <div className="post-author-info">
-                          <div className="post-avatar">{getAvatarElement(author || viewedUser)}</div>
+                          <div className="post-avatar">{renderAvatar(authorAvatar)}</div>
                           <div className="post-meta">
-                            <div className="post-author-name">{author?.username || viewedUser?.username || user?.username}</div>
-                            <div className="post-date">
-                              {new Date(post.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                            <div className="post-author-name">
+                              {author ? (
+                                <Link to={`/profile/${author.id || author._id}`} className="author-link">{authorUsername}</Link>
+                              ) : authorUsername}
                             </div>
+                            <div className="post-date">{formatDate(post.createdAt)}</div>
                           </div>
                         </div>
-                        {habit && (
-                          <div className="post-habit-badge">
-                            🎯 {habit.habitTitle}
+                        <div className="post-habit-badge">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 1l2.5 5 5.5.5-4 4 1 5.5L8 13l-5 3 1-5.5-4-4 5.5-.5z" fill="currentColor"/>
+                          </svg>
+                          {habitTitle}
+                        </div>
+                      </div>
+
+                      <div className="post-content">
+                        <p>{post.content}</p>
+                        {post.mediaUrl && (
+                          <div className="post-media-wrapper" style={{ marginTop: '14px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', background: '#0a0a0a' }}>
+                            {post.mediaType === 'video' ? (
+                              <video src={post.mediaUrl} controls style={{ width: '100%', maxHeight: '450px', display: 'block' }} />
+                            ) : (
+                              <img src={post.mediaUrl} alt="Check-in media" style={{ width: '100%', maxHeight: '450px', objectFit: 'contain', display: 'block' }} />
+                            )}
                           </div>
                         )}
                       </div>
-                      {post.content && (
-                        <div className="post-content">
-                          <p>{post.content}</p>
-                        </div>
-                      )}
-                      <div className="post-actions">
-                        <button 
-                          className={`btn-like ${post.isLikedByCurrentUser ? 'liked' : ''}`}
-                          onClick={() => !post.isLikedByCurrentUser && handleLike(getPostId(post))}
-                          disabled={post.isLikedByCurrentUser}
+
+                      <div className="post-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <button
+                          className={`btn-like ${isLiked ? 'liked' : ''}`}
+                          onClick={() => !isLiked && handleLike(postId)}
+                          disabled={isLiked}
                         >
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path 
-                              d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" 
-                              stroke="currentColor" 
-                              strokeWidth="1.5" 
-                              fill={post.isLikedByCurrentUser ? 'currentColor' : 'none'}
-                            />
-                          </svg>
-                          {post.isLikedByCurrentUser ? 'Liked' : 'Like'}
+                          <FiHeart fill={isLiked ? 'currentColor' : 'none'} />
+                          {isLiked ? 'Liked' : 'Like'}
                         </button>
+
+                        <button
+                          className="btn-comment"
+                          onClick={() => setExpandedPostId(expandedPostId === postId ? null : postId)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-secondary)',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'var(--transition)'
+                          }}
+                        >
+                          <FiMessageCircle />
+                          Comment ({post.commentCount || 0})
+                        </button>
+
                         <span className="post-stat">
-                          ❤️ {post.likeCount || 0} {post.likeCount === 1 ? 'like' : 'likes'}
+                          <FiHeart /> {post.likeCount || 0} {post.likeCount === 1 ? 'like' : 'likes'}
                         </span>
                       </div>
+
+                      {expandedPostId === postId && (
+                        <div className="comments-section" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+                          {/* Comments List */}
+                          <div className="comments-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', maxHeight: '250px', overflowY: 'auto' }}>
+                            {(post.comments || []).length === 0 ? (
+                              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', margin: '8px 0' }}>No comments yet. Start the conversation!</p>
+                            ) : (
+                              post.comments.map(c => {
+                                const cAuthor = c.userId || {};
+                                return (
+                                  <div key={c._id || c.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>
+                                      {typeof cAuthor.avatar === 'string' && cAuthor.avatar.startsWith('http') ? (
+                                        <img src={cAuthor.avatar} alt={cAuthor.username} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                      ) : (
+                                        cAuthor.avatar || '👤'
+                                      )}
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--white)' }}>{cAuthor.username || 'User'}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{formatDate(c.createdAt)}</span>
+                                      </div>
+                                      <p style={{ fontSize: '13px', color: 'var(--gray-300)', lineHeight: '1.4', margin: 0 }}>{c.content}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+
+                          {/* Add Comment Input */}
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                              type="text"
+                              placeholder="Write a comment..."
+                              value={commentText[postId] || ''}
+                              onChange={(e) => setCommentText({ ...commentText, [postId]: e.target.value })}
+                              onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(postId)}
+                              style={{ flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px', color: 'var(--text-primary)', fontSize: '14px' }}
+                            />
+                            <button
+                              onClick={() => handleCommentSubmit(postId)}
+                              disabled={submittingComments[postId]}
+                              style={{ background: 'var(--neon)', color: '#000', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: '600', fontSize: '13px', cursor: submittingComments[postId] ? 'not-allowed' : 'pointer', opacity: submittingComments[postId] ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              {submittingComments[postId] ? (
+                                <>
+                                  <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.3)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }}></div>
+                                  <span>Sending...</span>
+                                </>
+                              ) : 'Send'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })

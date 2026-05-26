@@ -100,9 +100,34 @@ class AuthController {
             const userId = req.params.id || req.user.id;
             const habits = await HabitMongo.find({ userId });
             const completions = await CompletionMongo.find({ userId });
-            
+
+            // Reset stale streaks before computing max streak values
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            for (let habit of habits) {
+                if (habit.lastCheckinDate) {
+                    const lastCheckin = new Date(habit.lastCheckinDate);
+                    lastCheckin.setHours(0, 0, 0, 0);
+                    if (lastCheckin < yesterday && habit.currentStreak > 0) {
+                        habit.currentStreak = 0;
+                        await habit.save();
+                    }
+                }
+            }
+
+            const currentStreak = habits.length > 0 ? Math.max(...habits.map(h => h.currentStreak || 0)) : 0;
+            const longestStreak = habits.length > 0 ? Math.max(...habits.map(h => h.longestStreak || 0)) : 0;
             const totalCheckins = completions.length;
-            res.json({ totalHabits: habits.length, totalCheckins });
+
+            res.json({ 
+                totalHabits: habits.length, 
+                totalCheckins,
+                currentStreak,
+                longestStreak
+            });
         } catch (error) {
             console.error('getStats error:', error);
             res.status(500).json({ message: 'Server error' });
