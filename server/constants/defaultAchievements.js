@@ -70,5 +70,33 @@ module.exports = [
     displayName: 'Early Bird',
     description: 'Check in before 8 AM',
     icon: '🌅'
+  },
+  {
+    name: 'battle_challenger',
+    displayName: 'Challenger',
+    description: 'Send your first battle challenge',
+    icon: '🎯',
+    xpReward: 25
+  },
+  {
+    name: 'battle_first_win',
+    displayName: 'First Victory',
+    description: 'Win your first habit battle',
+    icon: '⚔️',
+    xpReward: 25
+  },
+  {
+    name: 'battle_10_wins',
+    displayName: 'Battle Legend',
+    description: 'Win 10 habit battles',
+    icon: '🏅',
+    xpReward: 100
+  },
+  {
+    name: 'battle_streak_7',
+    displayName: 'Battle Streak',
+    description: 'Achieve a 7-day streak in a battle',
+    icon: '💥',
+    xpReward: 75
   }
 ];

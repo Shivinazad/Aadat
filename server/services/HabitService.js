@@ -2,7 +2,7 @@ const { HabitMongo } = require('../models-mongo');
 
 class HabitService {
     static async getAllByUserId(userId) {
-        return await HabitMongo.find({ userId });
+        return await HabitMongo.find({ userId }).populate('battleId');
     }
 
     static async getById(habitId) {

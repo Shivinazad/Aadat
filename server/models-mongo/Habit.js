@@ -50,6 +50,11 @@ const habitSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserMongo',
     required: true
+  },
+  battleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BattleMongo',
+    default: null
   }
 }, {
   timestamps: true

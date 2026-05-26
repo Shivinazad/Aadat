@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { subscribeToDataChanges } from '../services/socket';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import { useToast } from '../context/ToastContext';
+import HabitHeatmap from '../components/HabitHeatmap';
 import '../home.css';
 
 const Profile = () => {
@@ -346,6 +347,9 @@ const Profile = () => {
               {/* Weekly completion and check-ins removed per request */}
             </div>
           </section>
+
+          {/* Habit Heatmap */}
+          <HabitHeatmap userId={viewingUserId || undefined} />
 
           {/* Achievements Section */}
           <section className="profile-achievements-section">

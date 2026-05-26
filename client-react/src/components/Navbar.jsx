@@ -107,6 +107,7 @@ const Navbar = () => {
           <Link to="/dashboard" className={`nav-link ${isActive('/dashboard')}`}>Dashboard</Link>
           <Link to="/community" className={`nav-link ${isActive('/community')}`}>Community</Link>
           <Link to="/roadmap" className={`nav-link ${isActive('/roadmap')}`}>Roadmap</Link>
+          <Link to="/battles" className={`nav-link ${isActive('/battles')}`}>Battles</Link>
           <Link to="/leaderboard" className={`nav-link ${isActive('/leaderboard')}`}>Leaderboard</Link>
         </div>
         <div className="nav-icons">
@@ -142,6 +143,11 @@ const Navbar = () => {
                         if (type === 'like') return '❤️';
                         if (type === 'comment') return '💬';
                         if (type === 'invite') return '✉️';
+                        if (type === 'battle_challenge') return '⚔️';
+                        if (type === 'battle_accepted') return '✅';
+                        if (type === 'battle_rejected') return '❌';
+                        if (type === 'battle_completed') return '🏆';
+                        if (type === 'battle_streak') return '💥';
                         return '🔔';
                       };
 
@@ -224,6 +230,13 @@ const Navbar = () => {
           onClick={() => setMobileMenuOpen(false)}
         >
           Community
+        </Link>
+        <Link 
+          to="/battles" 
+          className={`nav-link ${isActive('/battles')}`} 
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          Battles
         </Link>
         <Link 
           to="/leaderboard" 

@@ -1,0 +1,247 @@
+/* ─── Habit Heatmap ─── */
+
+.heatmap-section {
+  margin-bottom: 32px;
+}
+
+.heatmap-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heatmap-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0;
+}
+
+.heatmap-summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.heatmap-stat-pill {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.heatmap-stat-pill strong {
+  color: var(--neon, #39d353);
+  font-weight: 700;
+}
+
+.heatmap-loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+/* Scroll wrapper for mobile */
+.heatmap-scroll-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.heatmap-grid-container {
+  min-width: min-content;
+}
+
+/* Month groups container */
+.heatmap-months-container {
+  display: flex;
+  gap: 8px;
+}
+
+.heatmap-month-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.heatmap-month-header {
+  font-size: 11px;
+  color: var(--text-secondary);
+  height: 16px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.heatmap-month-weeks {
+  display: flex;
+  gap: 3px;
+}
+
+/* Body layout */
+.heatmap-body {
+  display: flex;
+  gap: 4px;
+}
+
+/* Day labels (Mon, Wed, Fri) */
+.heatmap-day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.heatmap-month-header-spacer {
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.heatmap-day-label {
+  height: 12px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.heatmap-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: heatmapFadeIn 0.4s ease-out both;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.6);
+  box-shadow: 0 0 6px rgba(57, 211, 83, 0.4);
+  z-index: 2;
+  position: relative;
+}
+
+.heatmap-cell.future {
+  cursor: default;
+  pointer-events: none;
+}
+
+@keyframes heatmapFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tooltip */
+.heatmap-tooltip {
+  position: absolute;
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.heatmap-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(20, 20, 25, 0.95);
+}
+
+/* Legend */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.heatmap-legend-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0 4px;
+}
+
+.heatmap-legend-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .heatmap-card {
+    padding: 16px;
+  }
+
+  .heatmap-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heatmap-cell {
+    width: 10px;
+    height: 10px;
+  }
+
+  .heatmap-months-container {
+    gap: 6px;
+  }
+
+  .heatmap-month-weeks {
+    gap: 2px;
+  }
+
+  .heatmap-week {
+    gap: 2px;
+  }
+}

@@ -1,6 +1,6 @@
 const PostService = require('../services/PostService');
 const UserService = require('../services/UserService');
-const { HabitMongo, LikeMongo, NotificationMongo, UserMongo, CommentMongo } = require('../models-mongo');
+const { HabitMongo, LikeMongo, NotificationMongo, UserMongo, CommentMongo, CompletionMongo } = require('../models-mongo');
 const { emitDataChanged, emitUserDataChanged } = require('../realtime/socketEvents');
 const GeminiService = require('../services/GeminiService');
 
@@ -121,12 +121,27 @@ class PostController {
                     }
                     habit.lastCheckinDate = today;
                     await habit.save();
+
+                    // Record completion for heatmap and stats
+                    await CompletionMongo.create({
+                        HabitId: habit._id,
+                        date: today,
+                        notes: content || ''
+                    });
                 }
                 currentStreak = habit.currentStreak;
             }
 
             // Award XP
             await UserService.awardXP(userId, 10);
+
+            // Update active battles for this habit
+            try {
+                const BattleService = require('../services/BattleService');
+                await BattleService.recordCheckin(userId, habit ? habit.habitTitle : '', habit ? habit.battleId : null);
+            } catch (battleErr) {
+                console.error('Battle check-in update failed (non-blocking):', battleErr);
+            }
 
             // Check achievements
             const AchievementService = require('../services/AchievementService');

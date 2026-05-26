@@ -33,6 +33,9 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const notificationRoutes = require('./routes/notifications');
 const achievementRoutes = require('./routes/achievements');
 const inviteRoutes = require('./routes/invite');
+const battleRoutes = require('./routes/battles');
+const HeatmapController = require('./controllers/HeatmapController');
+const auth = require('./middleware/auth');
 const { UserMongo, HabitMongo, PostMongo, AchievementMongo } = require('./models-mongo');
 
 const app = express();
@@ -83,6 +86,44 @@ app.use(cors({
     credentials: true
 }));
 
+async function syncCompletionsFromPosts() {
+    try {
+        const { PostMongo, CompletionMongo } = require('./models-mongo');
+        const posts = await PostMongo.find({ habitId: { $ne: null } });
+        console.log(`[Sync] Found ${posts.length} posts to sync to completions...`);
+        let createdCount = 0;
+
+        for (const post of posts) {
+            const postDate = new Date(post.createdAt);
+            postDate.setHours(0, 0, 0, 0);
+
+            const endDate = new Date(postDate);
+            endDate.setHours(23, 59, 59, 999);
+
+            const exists = await CompletionMongo.exists({
+                HabitId: post.habitId,
+                date: { $gte: postDate, $lte: endDate }
+            });
+
+            if (!exists) {
+                await CompletionMongo.create({
+                    HabitId: post.habitId,
+                    date: postDate,
+                    notes: post.content || ''
+                });
+                createdCount++;
+            }
+        }
+        if (createdCount > 0) {
+            console.log(`[Sync] Successfully created ${createdCount} missing completion documents.`);
+        } else {
+            console.log(`[Sync] All completions are up to date.`);
+        }
+    } catch (err) {
+        console.error('[Sync] Error syncing completions from posts:', err);
+    }
+}
+
 async function initializeDb() {
     try {
         await connectMongo();
@@ -94,6 +135,7 @@ async function initializeDb() {
             )
         ));
         console.log('Connected to MongoDB');
+        await syncCompletionsFromPosts();
     } catch (error) {
         console.error('Unable to initialize database:', error);
         process.exit(1);
@@ -164,6 +206,15 @@ if (!isServerless) {
                 }, PING_INTERVAL);
                 console.log(`[keep-alive] pinging ${renderUrl}/health every 14 min`);
             }
+
+            // Auto-complete expired battles every hour
+            const BattleService = require('./services/BattleService');
+            const BATTLE_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
+            setInterval(() => {
+                BattleService.checkExpiredBattles()
+                    .catch(err => console.error('[BattleService] Expired battle check failed:', err.message));
+            }, BATTLE_CHECK_INTERVAL);
+            console.log('[BattleService] Checking for expired battles every hour');
         });
     });
 } else {
@@ -206,6 +257,9 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/invite', inviteRoutes);
+app.use('/api/battles', battleRoutes);
+app.get('/api/heatmap', auth, HeatmapController.getHeatmapData);
+app.get('/api/heatmap/:userId', auth, HeatmapController.getHeatmapData);
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client-react/dist')));

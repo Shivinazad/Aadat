@@ -58,6 +58,7 @@ export const authAPI = {
   getUserStats: (id) => id ? api.get(`/users/${id}/stats`) : api.get('/users/stats'),
   getUserById: (id) => api.get(`/users/${id}`),
   getUserAchievements: (id) => api.get(`/users/${id}/achievements`),
+  searchUsers: (q) => api.get('/users/search', { params: { q } }),
 };
 
 export const achievementsAPI = {
@@ -99,6 +100,20 @@ export const notificationsAPI = {
 
 export const inviteAPI = {
   sendInvite: (email) => api.post('/invite', { email }),
+};
+
+export const battlesAPI = {
+  getAll: (status) => api.get('/battles', { params: status ? { status } : {} }),
+  getById: (id) => api.get(`/battles/${id}`),
+  create: (data) => api.post('/battles', data),
+  accept: (id) => api.put(`/battles/${id}/accept`),
+  reject: (id) => api.put(`/battles/${id}/reject`),
+  checkin: (id) => api.post(`/battles/${id}/checkin`),
+  getLeaderboard: () => api.get('/battles/leaderboard'),
+};
+
+export const heatmapAPI = {
+  getData: (userId) => api.get(userId ? `/heatmap/${userId}` : '/heatmap'),
 };
 
 export default api;

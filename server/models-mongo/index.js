@@ -8,6 +8,7 @@ const AchievementMongo = require('./Achievement');
 const UserAchievementMongo = require('./UserAchievement');
 const CompletionMongo = require('./Completion');
 const CommentMongo = require('./Comment');
+const BattleMongo = require('./Battle');
 
 module.exports = {
   UserMongo,
@@ -19,5 +20,6 @@ module.exports = {
   AchievementMongo,
   UserAchievementMongo,
   CompletionMongo,
-  CommentMongo
+  CommentMongo,
+  BattleMongo
 };

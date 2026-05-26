@@ -26,6 +26,7 @@ router.put('/profile', auth, upload.single('avatar'), AuthController.updateProfi
 router.get('/profile', auth, AuthController.getProfile);
 
 // Param-based routes (matched last to avoid hijacking static paths)
+router.get('/search', auth, AuthController.searchUsers);
 router.get('/:id/achievements', auth, AchievementController.getAll);
 router.get('/:id/stats', auth, AuthController.getStats);
 router.get('/:id', auth, AuthController.getProfile);

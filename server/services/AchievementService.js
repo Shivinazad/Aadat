@@ -1,4 +1,4 @@
-const { AchievementMongo, UserAchievementMongo, PostMongo, HabitMongo, LikeMongo, UserMongo, NotificationMongo } = require('../models-mongo');
+const { AchievementMongo, UserAchievementMongo, PostMongo, HabitMongo, LikeMongo, UserMongo, NotificationMongo, BattleMongo } = require('../models-mongo');
 const { emitUserDataChanged } = require('../realtime/socketEvents');
 
 class AchievementService {
@@ -35,10 +35,34 @@ class AchievementService {
             
             const maxStreak = habits.reduce((max, h) => Math.max(max, h.longestStreak || 0), 0);
             const userLevel = user.user_level || 1;
+
+            // Battle stats (lazy-loaded only if battle achievements exist and are locked)
+            let battleStats = null;
+            const getBattleStats = async () => {
+                if (battleStats) return battleStats;
+                const [challengesSent, battlesWon, battleStreaks] = await Promise.all([
+                    BattleMongo.countDocuments({ challengerId: userId }),
+                    BattleMongo.countDocuments({ winner: userId, status: 'completed' }),
+                    BattleMongo.find({
+                        status: { $in: ['active', 'completed'] },
+                        $or: [{ challengerId: userId }, { opponentId: userId }]
+                    }).select('challengerId challengerData opponentData')
+                ]);
+
+                let maxBattleStreak = 0;
+                for (const b of battleStreaks) {
+                    const isChallenger = b.challengerId.toString() === userId.toString();
+                    const data = isChallenger ? b.challengerData : b.opponentData;
+                    maxBattleStreak = Math.max(maxBattleStreak, data?.longestStreak || 0);
+                }
+
+                battleStats = { challengesSent, battlesWon, maxBattleStreak };
+                return battleStats;
+            };
             
             const achievementsToUnlock = [];
             
-            const checkCondition = (name) => {
+            const checkCondition = async (name) => {
                 // If already unlocked, skip it
                 if (unlockedNames.has(name)) return false;
                 
@@ -68,13 +92,30 @@ class AchievementService {
                     case 'early_bird':
                         // Check if any post check-in occurred before 8 AM local time (hour < 8)
                         return posts.some(p => new Date(p.createdAt).getHours() < 8);
+                    // Battle achievements
+                    case 'battle_challenger': {
+                        const bs = await getBattleStats();
+                        return bs.challengesSent >= 1;
+                    }
+                    case 'battle_first_win': {
+                        const bs = await getBattleStats();
+                        return bs.battlesWon >= 1;
+                    }
+                    case 'battle_10_wins': {
+                        const bs = await getBattleStats();
+                        return bs.battlesWon >= 10;
+                    }
+                    case 'battle_streak_7': {
+                        const bs = await getBattleStats();
+                        return bs.maxBattleStreak >= 7;
+                    }
                     default:
                         return false;
                 }
             };
             
             for (const ach of allAchievements) {
-                if (checkCondition(ach.name) && !unlockedIds.has(ach._id.toString())) {
+                if ((await checkCondition(ach.name)) && !unlockedIds.has(ach._id.toString())) {
                     achievementsToUnlock.push(ach);
                 }
             }

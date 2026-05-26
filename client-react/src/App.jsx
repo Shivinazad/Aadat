@@ -10,6 +10,8 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import Community from './pages/Community';
 import Leaderboard from './pages/Leaderboard';
+import Battles from './pages/Battles';
+import BattleDetail from './pages/BattleDetail';
 import Roadmap from './pages/Roadmap';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
@@ -56,6 +58,26 @@ function App() {
               <PrivateRoute>
                 <ErrorBoundary>
                   <Leaderboard />
+                </ErrorBoundary>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/battles" 
+            element={
+              <PrivateRoute>
+                <ErrorBoundary>
+                  <Battles />
+                </ErrorBoundary>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/battles/:id" 
+            element={
+              <PrivateRoute>
+                <ErrorBoundary>
+                  <BattleDetail />
                 </ErrorBoundary>
               </PrivateRoute>
             } 

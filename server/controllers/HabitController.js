@@ -15,6 +15,11 @@ class HabitController {
             const processedHabits = [];
             
             for (const habit of habits) {
+                // If habit is linked to a battle, only show it if the battle is active
+                if (habit.battleId && habit.battleId.status !== 'active') {
+                    continue; // Skip pending, rejected, completed, etc.
+                }
+
                 if (habit.lastCheckinDate) {
                     const lastCheckin = new Date(habit.lastCheckinDate);
                     lastCheckin.setHours(0, 0, 0, 0);

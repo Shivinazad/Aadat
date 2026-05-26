@@ -99,7 +99,8 @@ class AuthController {
         try {
             const userId = req.params.id || req.user.id;
             const habits = await HabitMongo.find({ userId });
-            const completions = await CompletionMongo.find({ userId });
+            const habitIds = habits.map(h => h._id);
+            const completions = await CompletionMongo.find({ HabitId: { $in: habitIds } });
 
             // Reset stale streaks before computing max streak values
             const today = new Date();
@@ -180,6 +181,27 @@ class AuthController {
             res.json(users);
         } catch (error) {
             console.error('getRandomUsers error:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+    static async searchUsers(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q || q.trim().length < 1) {
+                return res.json([]);
+            }
+            // Escape regex special characters for safety
+            const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const users = await UserMongo.find({
+                _id: { $ne: req.user.id },
+                username: { $regex: `^${escaped}`, $options: 'i' }
+            })
+                .select('_id username avatar user_level')
+                .limit(15);
+            res.json(users);
+        } catch (error) {
+            console.error('searchUsers error:', error);
             res.status(500).json({ message: 'Server error' });
         }
     }
