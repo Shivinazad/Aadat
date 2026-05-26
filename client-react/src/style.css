@@ -528,7 +528,6 @@ body.dark-mode .nav-link.active {
   gap: 1rem;
 }
 
-/* Mobile Menu */
 .nav-links-mobile {
   display: none;
   position: absolute;
@@ -539,7 +538,6 @@ body.dark-mode .nav-link.active {
   border-bottom: 1px solid var(--gray-800);
   padding: 1rem;
   flex-direction: column;
-  transform: scale(1.2);
 }
 
 .sign-in {
@@ -3110,10 +3108,14 @@ body.landing-page .final-cta-section {
     @media (max-width: 768px) {
 
       /* Fix Top Margin - Reduce spacing */
-      .main-container,
+      .main-container {
+        margin-top: 64px !important;
+        padding-top: 18px !important;
+      }
+
       .dashboard-container,
       .content-wrapper {
-        padding-top: 18px !important;
+        padding-top: 0 !important;
         margin-top: 0 !important;
       }
 
