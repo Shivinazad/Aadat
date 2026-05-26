@@ -34,7 +34,13 @@ export const connectSocket = () => {
   const socket = getSocket();
   const token = localStorage.getItem('token');
 
-  socket.auth = token ? { token } : {};
+  // If token has changed, update auth and reconnect to re-authenticate
+  if (socket.auth?.token !== token) {
+    socket.auth = token ? { token } : {};
+    if (socket.connected) {
+      socket.disconnect();
+    }
+  }
 
   if (!socket.connected) {
     socket.connect();
