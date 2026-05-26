@@ -5,11 +5,13 @@ import { achievementsAPI, postsAPI, authAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import { subscribeToDataChanges } from '../services/socket';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
+import { useToast } from '../context/ToastContext';
 import '../home.css';
 
 const Profile = () => {
   const { user, logout, updateUser, fetchUser } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const params = useParams();
   const viewingUserId = params.id;
   const getUserId = (targetUser) => targetUser?.id || targetUser?._id;
@@ -104,7 +106,7 @@ const Profile = () => {
       fetchPosts();
     } catch (error) {
       const errorMsg = error.response?.data?.msg || 'Failed to post comment';
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmittingComments(prev => ({ ...prev, [postId]: false }));
     }
@@ -231,7 +233,7 @@ const Profile = () => {
       setShowAvatarModal(false);
     } catch (error) {
       console.error('Failed to update avatar:', error);
-      alert('Failed to update avatar');
+      toast.error('Failed to update avatar');
     }
   };
 
@@ -242,7 +244,7 @@ const Profile = () => {
       setShowBioModal(false);
     } catch (error) {
       console.error('Failed to update bio:', error);
-      alert('Failed to update bio');
+      toast.error('Failed to update bio');
     }
   };
 

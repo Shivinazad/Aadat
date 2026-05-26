@@ -7,10 +7,12 @@ import CountUp from 'react-countup';
 import { FiHeart, FiMessageCircle } from 'react-icons/fi';
 import { subscribeToDataChanges } from '../services/socket';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import '../home.css';
 
 const Community = () => {
   const { user, fetchUser } = useAuth();
+  const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -37,7 +39,7 @@ const Community = () => {
       }
     } catch (error) {
       const errorMsg = error.response?.data?.msg || 'Failed to post comment';
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmittingComments(prev => ({ ...prev, [postId]: false }));
     }

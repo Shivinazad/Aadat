@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import Navbar from '../components/Navbar';
+import { useToast } from '../context/ToastContext';
 import '../home.css';
 
 const EditProfile = () => {
   const { user, updateUser, fetchUser } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [selectedAvatar, setSelectedAvatar] = useState('👤');
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -70,7 +72,7 @@ const EditProfile = () => {
       setTimeout(() => setAvatarSaved(false), 3000);
     } catch (error) {
       console.error('Error updating avatar:', error);
-      alert('Failed to update avatar. Please try again.');
+      toast.error('Failed to update avatar. Please try again.');
     } finally {
       setSavingAvatar(false);
     }
@@ -78,7 +80,7 @@ const EditProfile = () => {
 
   const handleSaveUsername = async () => {
     if (!username.trim()) {
-      alert('Username cannot be empty');
+      toast.warn('Username cannot be empty');
       return;
     }
     
@@ -105,7 +107,7 @@ const EditProfile = () => {
       setTimeout(() => setUsernameSaved(false), 3000);
     } catch (error) {
       console.error('Error updating username:', error);
-      alert(error.response?.data?.msg || 'Failed to update username. Please try again.');
+      toast.error(error.response?.data?.msg || 'Failed to update username. Please try again.');
       // Reset to original username on error
       setUsername(user?.username || '');
     } finally {
@@ -127,7 +129,7 @@ const EditProfile = () => {
       setTimeout(() => setBioSaved(false), 3000);
     } catch (error) {
       console.error('Error updating bio:', error);
-      alert('Failed to update bio. Please try again.');
+      toast.error('Failed to update bio. Please try again.');
     } finally {
       setSavingBio(false);
     }
@@ -185,7 +187,7 @@ const EditProfile = () => {
       navigate('/profile', { replace: true });
     } catch (error) {
       console.error('Error saving profile changes on done:', error);
-      alert('Failed to save some profile changes. Please check and try again.');
+      toast.error('Failed to save some profile changes. Please check and try again.');
     } finally {
       setSavingAvatar(false);
       setSavingUsername(false);

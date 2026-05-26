@@ -28,7 +28,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 403 && (error.response.data?.msg?.includes('suspended') || error.response.data?.message?.includes('suspended'))) {
-      alert(error.response.data.msg || error.response.data.message);
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: error.response.data.msg || error.response.data.message, type: 'error' } }));
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

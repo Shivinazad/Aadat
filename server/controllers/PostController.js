@@ -70,7 +70,7 @@ class PostController {
                 const user = await UserMongo.findById(userId);
                 if (user) {
                     user.warnings = (user.warnings || 0) + 1;
-                    if (user.warnings >= 2) {
+                    if (user.warnings >= 3) {
                         user.isSuspended = true;
                         await user.save();
                         return res.status(403).json({ 
@@ -79,7 +79,7 @@ class PostController {
                     } else {
                         await user.save();
                         return res.status(400).json({ 
-                            msg: `Post blocked by AI Moderator: abusive content detected (${moderation.reason}). Warning: You have ${user.warnings} warning(s). Your account will be suspended on 2 warnings.` 
+                            msg: `Post blocked by AI Moderator: abusive content detected (${moderation.reason}). Warning: You have ${user.warnings} warning(s). Your account will be suspended on 3 warnings.` 
                         });
                     }
                 }
@@ -231,7 +231,7 @@ class PostController {
                 const user = await UserMongo.findById(userId);
                 if (user) {
                     user.warnings = (user.warnings || 0) + 1;
-                    if (user.warnings >= 2) {
+                    if (user.warnings >= 3) {
                         user.isSuspended = true;
                         await user.save();
                         return res.status(403).json({ 
@@ -240,7 +240,7 @@ class PostController {
                     } else {
                         await user.save();
                         return res.status(400).json({ 
-                            msg: `Comment blocked by AI Moderator: abusive content detected (${moderation.reason}). Warning: You have ${user.warnings} warning(s). Your account will be suspended on 2 warnings.` 
+                            msg: `Comment blocked by AI Moderator: abusive content detected (${moderation.reason}). Warning: You have ${user.warnings} warning(s). Your account will be suspended on 3 warnings.` 
                         });
                     }
                 }
