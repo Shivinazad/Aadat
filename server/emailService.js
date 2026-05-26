@@ -1,6 +1,13 @@
+const { Resend } = require('resend');
 const sgMail = require('@sendgrid/mail');
 const nodemailer = require('nodemailer');
 const { getClientUrl } = require('./utils/urls');
+
+// ---- Provider setup ----
+let resend;
+if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+}
 
 if (process.env.SENDGRID_API_KEY) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -14,20 +21,61 @@ const createGmailTransport = () => nodemailer.createTransport({
     }
 });
 
+// ---- Generic send function (tries Resend → SendGrid → Gmail) ----
+const sendEmail = async ({ to, subject, text, html }) => {
+    // 1. Resend (HTTP API — works on all cloud hosts including Render)
+    if (resend) {
+        const fromEmail = process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev';
+        const { data, error } = await resend.emails.send({
+            from: `Aadat <${fromEmail}>`,
+            to: [to],
+            subject,
+            text,
+            html
+        });
+        if (error) throw new Error(`Resend error: ${error.message}`);
+        console.log(`✅ Email sent to ${to} via Resend`);
+        return { success: true, messageId: data?.id };
+    }
+
+    // 2. SendGrid (HTTP API — works on cloud hosts)
+    if (process.env.SENDGRID_API_KEY) {
+        const senderEmail = process.env.SENDGRID_SENDER_EMAIL || 'noreply@yourdomain.com';
+        const result = await sgMail.send({
+            to,
+            from: { email: senderEmail, name: 'Aadat' },
+            replyTo: senderEmail,
+            subject,
+            text,
+            html
+        });
+        console.log(`✅ Email sent to ${to} via SendGrid`);
+        return { success: true, messageId: result[0].headers['x-message-id'] };
+    }
+
+    // 3. Gmail/Nodemailer (SMTP — only works locally, blocked on Render)
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+        const transporter = createGmailTransport();
+        const info = await transporter.sendMail({
+            from: `"Aadat" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            text,
+            html
+        });
+        console.log(`✅ Email sent to ${to} via Gmail`);
+        return { success: true, messageId: info.messageId };
+    }
+
+    throw new Error('No email service configured (set RESEND_API_KEY, SENDGRID_API_KEY, or EMAIL_USER/EMAIL_PASSWORD)');
+};
+
+// ---- Invitation Email ----
 const sendInvitationEmail = async (toEmail, senderName) => {
     try {
-        const senderEmail = process.env.SENDGRID_SENDER_EMAIL || 'noreply@yourdomain.com';
-        
-        const msg = {
-            to: toEmail,
-            from: {
-                email: senderEmail,
-                name: 'Aadat'
-            },
-            replyTo: senderEmail,
-            subject: `${senderName} invited you to Aadat`,
-            text: `Hi there!\n\n${senderName} has invited you to join Aadat, a habit-tracking platform where you can build better habits together.\n\nJoin now: ${getClientUrl()}\n\nBest regards,\nAadat Team`,
-            html: `
+        const subject = `${senderName} invited you to Aadat`;
+        const text = `Hi there!\n\n${senderName} has invited you to join Aadat, a habit-tracking platform where you can build better habits together.\n\nJoin now: ${getClientUrl()}\n\nBest regards,\nAadat Team`;
+        const html = `
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -311,52 +359,21 @@ const sendInvitationEmail = async (toEmail, senderName) => {
                     </div>
                 </body>
                 </html>
-            `
-        };
-        
-        if (process.env.SENDGRID_API_KEY) {
-            const result = await sgMail.send(msg);
-            console.log(`✅ Invitation email sent to ${toEmail} via SendGrid`);
-            return { success: true, messageId: result[0].headers['x-message-id'] };
-        } else if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-            const transporter = createGmailTransport();
-            const gmailMsg = {
-                from: `"Aadat" <${process.env.EMAIL_USER}>`,
-                to: msg.to,
-                subject: msg.subject,
-                text: msg.text,
-                html: msg.html
-            };
-            const info = await transporter.sendMail(gmailMsg);
-            console.log(`✅ Invitation email sent to ${toEmail} via Gmail`);
-            return { success: true, messageId: info.messageId };
-        } else {
-            throw new Error('No email service configured (set SENDGRID_API_KEY or EMAIL_USER/EMAIL_PASSWORD)');
-        }
-        
+            `;
+
+        return await sendEmail({ to: toEmail, subject, text, html });
     } catch (error) {
         console.error('❌ Error sending invitation email:', error);
-        if (error.response) {
-            console.error('SendGrid error details:', error.response.body);
-        }
         throw error;
     }
 };
 
+// ---- OTP Email ----
 const sendOTPEmail = async (toEmail, otp, username) => {
     try {
-        const senderEmail = process.env.SENDGRID_SENDER_EMAIL || 'noreply@yourdomain.com';
-        
-        const msg = {
-            to: toEmail,
-            from: {
-                email: senderEmail,
-                name: 'Aadat'
-            },
-            replyTo: senderEmail,
-            subject: `Your verification code is ${otp}`,
-            text: `Hello ${username || 'there'},\n\nYour Aadat verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\nBest regards,\nAadat Team`,
-            html: `
+        const subject = `Your verification code is ${otp}`;
+        const text = `Hello ${username || 'there'},\n\nYour Aadat verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\nBest regards,\nAadat Team`;
+        const html = `
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -522,34 +539,11 @@ const sendOTPEmail = async (toEmail, otp, username) => {
                     </div>
                 </body>
                 </html>
-            `
-        };
-        
-        if (process.env.SENDGRID_API_KEY) {
-            const result = await sgMail.send(msg);
-            console.log(`✅ OTP email sent to ${toEmail} via SendGrid`);
-            return { success: true, messageId: result[0].headers['x-message-id'] };
-        } else if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-            const transporter = createGmailTransport();
-            const gmailMsg = {
-                from: `"Aadat" <${process.env.EMAIL_USER}>`,
-                to: msg.to,
-                subject: msg.subject,
-                text: msg.text,
-                html: msg.html
-            };
-            const info = await transporter.sendMail(gmailMsg);
-            console.log(`✅ OTP email sent to ${toEmail} via Gmail`);
-            return { success: true, messageId: info.messageId };
-        } else {
-            throw new Error('No email service configured (set SENDGRID_API_KEY or EMAIL_USER/EMAIL_PASSWORD)');
-        }
-        
+            `;
+
+        return await sendEmail({ to: toEmail, subject, text, html });
     } catch (error) {
         console.error('❌ Error sending OTP email:', error);
-        if (error.response) {
-            console.error('SendGrid error details:', error.response.body);
-        }
         throw error;
     }
 };
