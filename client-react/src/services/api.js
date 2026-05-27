@@ -17,6 +17,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['x-timezone-offset'] = new Date().getTimezoneOffset();
     return config;
   },
   (error) => {
@@ -75,7 +76,7 @@ export const habitsAPI = {
 };
 
 export const postsAPI = {
-  getAll: () => api.get('/posts'),
+  getAll: (category) => api.get('/posts', { params: category ? { category } : {} }),
   getUserPosts: (userId) => api.get(`/posts/user/${userId}`),
   create: (postData) => api.post('/posts', postData, {
     headers: {

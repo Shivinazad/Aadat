@@ -1,0 +1,191 @@
+/* Categorized Community Feed Styles */
+
+.category-filters-wrapper {
+  margin: 1.5rem 0 2rem 0;
+  width: 100%;
+}
+
+.category-filters-container {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem 0.75rem 0.25rem;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-filters-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Glassmorphic Chip */
+.category-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 0.6rem 1.2rem;
+  color: var(--gray-400);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.category-chip:hover {
+  transform: translateY(-2px);
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-chip:active {
+  transform: translateY(0);
+}
+
+/* Predefined neon themes for categories */
+.category-chip.active.cat-all {
+  border-color: rgba(0, 255, 136, 0.4);
+  background: rgba(0, 255, 136, 0.06);
+  color: #00ff88;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.15), inset 0 0 8px rgba(0, 255, 136, 0.05);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.category-chip.active.cat-coding {
+  border-color: rgba(0, 242, 254, 0.4);
+  background: rgba(0, 242, 254, 0.06);
+  color: #00f2fe;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.15), inset 0 0 8px rgba(0, 242, 254, 0.05);
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
+}
+
+.category-chip.active.cat-learning {
+  border-color: rgba(185, 114, 255, 0.4);
+  background: rgba(185, 114, 255, 0.06);
+  color: #b972ff;
+  box-shadow: 0 0 15px rgba(185, 114, 255, 0.15), inset 0 0 8px rgba(185, 114, 255, 0.05);
+  text-shadow: 0 0 8px rgba(185, 114, 255, 0.4);
+}
+
+.category-chip.active.cat-gym {
+  border-color: rgba(255, 95, 109, 0.4);
+  background: rgba(255, 95, 109, 0.06);
+  color: #ff5f6d;
+  box-shadow: 0 0 15px rgba(255, 95, 109, 0.15), inset 0 0 8px rgba(255, 95, 109, 0.05);
+  text-shadow: 0 0 8px rgba(255, 95, 109, 0.4);
+}
+
+.category-chip.active.cat-running {
+  border-color: rgba(255, 195, 113, 0.4);
+  background: rgba(255, 195, 113, 0.06);
+  color: #ffc371;
+  box-shadow: 0 0 15px rgba(255, 195, 113, 0.15), inset 0 0 8px rgba(255, 195, 113, 0.05);
+  text-shadow: 0 0 8px rgba(255, 195, 113, 0.4);
+}
+
+.category-chip.active.cat-health {
+  border-color: rgba(0, 227, 174, 0.4);
+  background: rgba(0, 227, 174, 0.06);
+  color: #00e3ae;
+  box-shadow: 0 0 15px rgba(0, 227, 174, 0.15), inset 0 0 8px rgba(0, 227, 174, 0.05);
+  text-shadow: 0 0 8px rgba(0, 227, 174, 0.4);
+}
+
+.category-chip.active.cat-general {
+  border-color: rgba(224, 224, 224, 0.3);
+  background: rgba(224, 224, 224, 0.04);
+  color: #e0e0e0;
+  box-shadow: 0 0 15px rgba(224, 224, 224, 0.1), inset 0 0 8px rgba(224, 224, 224, 0.02);
+  text-shadow: 0 0 8px rgba(224, 224, 224, 0.3);
+}
+
+/* Post Header Badges Wrapper */
+.post-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Category Badge inside Post Card */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+}
+
+.category-badge.cat-coding {
+  background: rgba(0, 242, 254, 0.06);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  color: #00f2fe;
+}
+
+.category-badge.cat-learning {
+  background: rgba(185, 114, 255, 0.06);
+  border: 1px solid rgba(185, 114, 255, 0.2);
+  color: #b972ff;
+}
+
+.category-badge.cat-gym {
+  background: rgba(255, 95, 109, 0.06);
+  border: 1px solid rgba(255, 95, 109, 0.2);
+  color: #ff5f6d;
+}
+
+.category-badge.cat-running {
+  background: rgba(255, 195, 113, 0.06);
+  border: 1px solid rgba(255, 195, 113, 0.2);
+  color: #ffc371;
+}
+
+.category-badge.cat-health {
+  background: rgba(0, 227, 174, 0.06);
+  border: 1px solid rgba(0, 227, 174, 0.2);
+  color: #00e3ae;
+}
+
+.category-badge.cat-general {
+  background: rgba(224, 224, 224, 0.04);
+  border: 1px solid rgba(224, 224, 224, 0.15);
+  color: #e0e0e0;
+}
+
+.category-badge.cat-other {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--gray-300);
+}
+
+/* Adjust post header layout to fit badges nicely */
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .post-header-badges {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}

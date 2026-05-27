@@ -1,15 +1,13 @@
 const HabitService = require('../services/HabitService');
 const GeminiService = require('../services/GeminiService');
+const { getClientToday, getClientDateNormalized } = require('../utils/timezone');
 
 class HabitController {
     static async getAll(req, res) {
         try {
             const habits = await HabitService.getAllByUserId(req.user.id);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
+            const today = getClientToday(req);
+            const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
             
             let updatedAny = false;
             const processedHabits = [];
@@ -21,14 +19,22 @@ class HabitController {
                 }
 
                 if (habit.lastCheckinDate) {
-                    const lastCheckin = new Date(habit.lastCheckinDate);
-                    lastCheckin.setHours(0, 0, 0, 0);
+                    const lastCheckin = getClientDateNormalized(habit.lastCheckinDate, req);
                     
                     // If last checkin is older than yesterday, active streak is broken
-                    if (lastCheckin < yesterday && habit.currentStreak > 0) {
+                    if (lastCheckin.getTime() < yesterday.getTime() && habit.currentStreak > 0) {
                         habit.currentStreak = 0;
                         await habit.save();
                         updatedAny = true;
+                    }
+                    
+                    // Auto-heal streak if it was reset to 0 due to the timezone bug but there was a check-in yesterday or today
+                    if (habit.currentStreak === 0 && habit.longestStreak > 0) {
+                        if (lastCheckin.getTime() === today.getTime() || lastCheckin.getTime() === yesterday.getTime()) {
+                            habit.currentStreak = habit.longestStreak || 1;
+                            await habit.save();
+                            updatedAny = true;
+                        }
                     }
                 }
                 processedHabits.push(habit);

@@ -9,11 +9,64 @@ import { subscribeToDataChanges } from '../services/socket';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import '../home.css';
+import '../styles/Community.css';
 
 const Community = () => {
   const { user, fetchUser } = useAuth();
   const toast = useToast();
   const [posts, setPosts] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('all');
+
+  const categories = [
+    { id: 'all', name: 'All Feed', icon: '🌐' },
+    { id: 'coding', name: 'Coding', icon: '💻' },
+    { id: 'learning', name: 'Learning', icon: '📚' },
+    { id: 'gym', name: 'Gym & Workout', icon: '🏋️‍♂️' },
+    { id: 'running', name: 'Running & Cardio', icon: '🏃‍♂️' },
+    { id: 'health', name: 'Health & Wellness', icon: '🧘‍♂️' },
+    { id: 'general', name: 'General', icon: '💬' }
+  ];
+
+  const getCategoryInfo = (categoryStr, habitTitle, habitId) => {
+    if (!habitId) {
+      return { name: 'General', icon: '💬', class: 'general' };
+    }
+    
+    const cat = (categoryStr || '').toLowerCase();
+    const title = (habitTitle || '').toLowerCase();
+    
+    const isCoding = /code|coding|dev|develop|program|tech|dsa|programming|software|web|python|javascript|java\b|rust|c\+\+|html|css/i.test(cat) || 
+                     /code|coding|dev|develop|program|tech|dsa|programming|software|web|python|javascript|java\b|rust|c\+\+|html|css/i.test(title);
+    if (isCoding) {
+      return { name: 'Coding', icon: '💻', class: 'coding' };
+    }
+    
+    const isRunning = /run|running|cardio|walk|walking|jog|jogging|marathon/i.test(cat) ||
+                      /run|running|cardio|walk|walking|jog|jogging|marathon/i.test(title);
+    if (isRunning) {
+      return { name: 'Running', icon: '🏃‍♂️', class: 'running' };
+    }
+
+    const isGym = /gym|workout|lift|weights|exercise|fitness|bodybuilding|strength/i.test(cat) ||
+                  /gym|workout|lift|weights|exercise|fitness|bodybuilding|strength/i.test(title);
+    if (isGym) {
+      return { name: 'Gym', icon: '🏋️‍♂️', class: 'gym' };
+    }
+
+    const isLearning = /study|studying|learn|learning|read|reading|book|education|french|course|class|math|science|history|exam|prepare/i.test(cat) ||
+                       /study|studying|learn|learning|read|reading|book|education|french|course|class|math|science|history|exam|prepare/i.test(title);
+    if (isLearning) {
+      return { name: 'Learning', icon: '📚', class: 'learning' };
+    }
+
+    const isHealth = /health|meditat|yoga|sleep|mental|mind|wellness|nutrition|diet|water|hydrate/i.test(cat) ||
+                     /health|meditat|yoga|sleep|mental|mind|wellness|nutrition|diet|water|hydrate/i.test(title);
+    if (isHealth) {
+      return { name: 'Health', icon: '🧘‍♂️', class: 'health' };
+    }
+    
+    return { name: categoryStr || 'General', icon: '✨', class: 'other' };
+  };
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeMembers: 0,
@@ -46,9 +99,12 @@ const Community = () => {
   };
 
   useEffect(() => {
-    fetchPosts();
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [activeCategory]);
 
   useEffect(() => {
     const currentUserId = user?.id || user?._id;
@@ -69,11 +125,12 @@ const Community = () => {
     });
 
     return unsubscribe;
-  }, [user, fetchUser]);
+  }, [user, fetchUser, activeCategory]);
 
   const fetchPosts = async () => {
+    setLoading(true);
     try {
-      const response = await postsAPI.getAll();
+      const response = await postsAPI.getAll(activeCategory);
       setPosts(response.data);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
@@ -178,6 +235,21 @@ const Community = () => {
 
           {/* Feed Section */}
           <section className="feed-section">
+            <div className="category-filters-wrapper">
+              <div className="category-filters-container">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    className={`category-chip ${activeCategory === cat.id ? 'active' : ''} cat-${cat.id}`}
+                    onClick={() => setActiveCategory(cat.id)}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
             <div className="feed-container">
               {loading ? (
                 <div className="loading-state">
@@ -196,7 +268,9 @@ const Community = () => {
                   const habit = post.habitId || post.Habit;
                   const authorUsername = author?.username || 'Unknown User';
                   const authorAvatar = author?.avatar || '👤';
-                  const habitTitle = habit?.habitTitle || 'General Post';
+                  const habitTitle = habit?.habitTitle;
+                  const habitCategory = habit?.habitCategory;
+                  const categoryInfo = getCategoryInfo(habitCategory, habitTitle, habit?._id || habit?.id);
                   const isLiked = post.isLikedByCurrentUser;
 
                   // Render avatar: show image if URL, emoji/text otherwise
@@ -237,11 +311,18 @@ const Community = () => {
                             <div className="post-date">{formatDate(post.createdAt)}</div>
                           </div>
                         </div>
-                        <div className="post-habit-badge">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M8 1l2.5 5 5.5.5-4 4 1 5.5L8 13l-5 3 1-5.5-4-4 5.5-.5z" fill="currentColor"/>
-                          </svg>
-                          {habitTitle}
+                        <div className="post-header-badges">
+                          <span className={`category-badge cat-${categoryInfo.class}`}>
+                            {categoryInfo.icon} {categoryInfo.name}
+                          </span>
+                          {habitTitle && (
+                            <div className="post-habit-badge">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 1l2.5 5 5.5.5-4 4 1 5.5L8 13l-5 3 1-5.5-4-4 5.5-.5z" fill="currentColor"/>
+                              </svg>
+                              {habitTitle}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="post-content">

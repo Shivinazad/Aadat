@@ -3,6 +3,7 @@ const UserService = require('../services/UserService');
 const { HabitMongo, LikeMongo, NotificationMongo, UserMongo, CommentMongo, CompletionMongo } = require('../models-mongo');
 const { emitDataChanged, emitUserDataChanged } = require('../realtime/socketEvents');
 const GeminiService = require('../services/GeminiService');
+const { getClientToday, getClientDateNormalized } = require('../utils/timezone');
 
 class PostController {
     static async getRecent(req, res) {
@@ -30,7 +31,8 @@ class PostController {
     static async getFeed(req, res) {
         try {
             const currentUserId = req.user.id;
-            const posts = await PostService.getFeedPosts(currentUserId);
+            const category = req.query.category;
+            const posts = await PostService.getFeedPosts(currentUserId, category);
             res.status(200).json(posts);
         } catch (error) {
             console.error('Error in getFeed:', error);
@@ -100,18 +102,20 @@ class PostController {
             let currentStreak = 0;
             const habit = await HabitMongo.findById(habitId);
             if (habit) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const lastCheckin = habit.lastCheckinDate ? new Date(habit.lastCheckinDate) : null;
-                
-                if (lastCheckin) lastCheckin.setHours(0, 0, 0, 0);
+                const today = getClientToday(req);
+                const lastCheckin = getClientDateNormalized(habit.lastCheckinDate, req);
 
-                if (!lastCheckin || today > lastCheckin) {
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
+                if (!lastCheckin || today.getTime() > lastCheckin.getTime()) {
+                    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
                     
+                    let baseStreak = habit.currentStreak;
+                    // Heal streak if it was reset to 0 but the last check-in was actually yesterday
+                    if (baseStreak === 0 && lastCheckin && lastCheckin.getTime() === yesterday.getTime()) {
+                        baseStreak = habit.longestStreak || 1;
+                    }
+
                     if (lastCheckin && lastCheckin.getTime() === yesterday.getTime()) {
-                        habit.currentStreak += 1;
+                        habit.currentStreak = baseStreak + 1;
                     } else {
                         habit.currentStreak = 1;
                     }
@@ -123,10 +127,9 @@ class PostController {
                     await habit.save();
 
                     // Record completion for heatmap and stats (normalized to UTC midnight)
-                    const utcMidnight = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
                     await CompletionMongo.create({
                         HabitId: habit._id,
-                        date: utcMidnight,
+                        date: today,
                         notes: content || ''
                     });
                 }
