@@ -1,4 +1,4 @@
-const { CompletionMongo, HabitMongo } = require('../models-mongo');
+const { CompletionMongo, HabitMongo, PostMongo } = require('../models-mongo');
 
 class HeatmapController {
     /**
@@ -17,9 +17,17 @@ class HeatmapController {
             startDate.setFullYear(startDate.getFullYear() - 1);
             startDate.setHours(0, 0, 0, 0);
 
-            // Get all habits for the user to filter completions
-            const habits = await HabitMongo.find({ userId }).select('_id');
-            const habitIds = habits.map(h => h._id);
+            // Get all habits (active and deleted ones the user has posted on)
+            const activeHabits = await HabitMongo.find({ userId }).select('_id');
+            const activeHabitIds = activeHabits.map(h => h._id);
+
+            const posts = await PostMongo.find({ userId, habitId: { $ne: null } }).select('habitId');
+            const postHabitIds = posts.map(p => p.habitId);
+
+            const habitIds = Array.from(new Set([
+                ...activeHabitIds.map(id => id.toString()),
+                ...postHabitIds.map(id => id.toString())
+            ])).map(id => new (require('mongoose').Types.ObjectId)(id));
 
             if (habitIds.length === 0) {
                 return res.json([]);

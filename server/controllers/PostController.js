@@ -122,10 +122,11 @@ class PostController {
                     habit.lastCheckinDate = today;
                     await habit.save();
 
-                    // Record completion for heatmap and stats
+                    // Record completion for heatmap and stats (normalized to UTC midnight)
+                    const utcMidnight = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
                     await CompletionMongo.create({
                         HabitId: habit._id,
-                        date: today,
+                        date: utcMidnight,
                         notes: content || ''
                     });
                 }

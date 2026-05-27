@@ -66,7 +66,12 @@ const HabitHeatmap = ({ userId }) => {
       for (let day = 0; day < 7; day++) {
         const d = new Date(currentDate);
         d.setDate(d.getDate() + day);
-        const dateStr = d.toISOString().split('T')[0];
+        
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dateVal = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dateVal}`;
+
         const count = heatmapData[dateStr] || 0;
         const isFuture = d > today;
 

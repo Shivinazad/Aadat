@@ -89,36 +89,33 @@ app.use(cors({
 async function syncCompletionsFromPosts() {
     try {
         const { PostMongo, CompletionMongo } = require('./models-mongo');
+        
+        // Clear existing completions to re-sync them with proper UTC midnight normalization
+        await CompletionMongo.deleteMany({});
+        
         const posts = await PostMongo.find({ habitId: { $ne: null } });
         console.log(`[Sync] Found ${posts.length} posts to sync to completions...`);
         let createdCount = 0;
 
         for (const post of posts) {
-            const postDate = new Date(post.createdAt);
-            postDate.setHours(0, 0, 0, 0);
-
-            const endDate = new Date(postDate);
-            endDate.setHours(23, 59, 59, 999);
+            const d = new Date(post.createdAt);
+            const utcMidnight = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 
             const exists = await CompletionMongo.exists({
                 HabitId: post.habitId,
-                date: { $gte: postDate, $lte: endDate }
+                date: utcMidnight
             });
 
             if (!exists) {
                 await CompletionMongo.create({
                     HabitId: post.habitId,
-                    date: postDate,
+                    date: utcMidnight,
                     notes: post.content || ''
                 });
                 createdCount++;
             }
         }
-        if (createdCount > 0) {
-            console.log(`[Sync] Successfully created ${createdCount} missing completion documents.`);
-        } else {
-            console.log(`[Sync] All completions are up to date.`);
-        }
+        console.log(`[Sync] Successfully backfilled ${createdCount} completion documents.`);
     } catch (err) {
         console.error('[Sync] Error syncing completions from posts:', err);
     }
