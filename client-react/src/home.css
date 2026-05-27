@@ -5657,3 +5657,116 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     box-shadow: none !important;
 }
+
+/* ==========================================================================
+   DASHBOARD WINDOW PREVIEW (FIXED LIGHT THEME FOR LANDING PAGE HERO)
+   ========================================================================== */
+.dashboard-window {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border: 1px solid #e5e5e5 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dashboard-window .window-header {
+  background: #f5f5f5 !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+}
+
+.dashboard-window .window-title {
+  color: #404040 !important;
+}
+
+.dashboard-window .window-content {
+  background: #ffffff !important;
+  padding: 2.5rem !important;
+}
+
+.dashboard-window .streak-display {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.12) 0%, rgba(0, 255, 136, 0.04) 100%) !important;
+  border: 1px solid rgba(0, 255, 136, 0.25) !important;
+  padding: 1.5rem !important;
+  margin-bottom: 2rem !important;
+}
+
+.dashboard-window .streak-number-large {
+  color: #000000 !important;
+}
+
+.dashboard-window .streak-label {
+  color: #525252 !important;
+}
+
+.dashboard-window .habits-today {
+  background: #ffffff !important;
+  border: 1px solid #e5e5e5 !important;
+  padding: 1.25rem !important;
+}
+
+.dashboard-window .habits-header {
+  color: #000000 !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+}
+
+.dashboard-window .habits-count {
+  color: #737373 !important;
+}
+
+.dashboard-window .habit-item {
+  background: #f8f8f8 !important;
+  border: 1px solid #eaeaea !important;
+  color: #171717 !important;
+  padding: 0.85rem 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 1rem !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-radius: 8px !important;
+  transition: background 0.2s ease !important;
+}
+
+.dashboard-window .habit-item:hover {
+  background: #f0f0f0 !important;
+  transform: translateX(2px) !important;
+}
+
+.dashboard-window .habit-check {
+  border: 2px solid #cccccc !important;
+  color: #ffffff !important;
+  background: transparent !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.dashboard-window .habit-item.done .habit-check {
+  background: #00ff88 !important;
+  border-color: #00ff88 !important;
+  color: #000000 !important;
+}
+
+.dashboard-window .habit-name {
+  color: #171717 !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+}
+
+.dashboard-window .habit-item.done .habit-name {
+  color: #737373 !important;
+  text-decoration: line-through !important;
+}
+
+.dashboard-window .habit-streak {
+  color: #525252 !important;
+  font-weight: 600 !important;
+}
